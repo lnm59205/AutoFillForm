@@ -390,8 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
             workspace.classList.remove('hidden');
             addLog("system", `Đã phân tích thành công biểu mẫu: "${data.title}"`);
             
-            // Auto fill default percentages
-            autoFillDefaultPercentages();
+            // Auto fill zero percentages
+            autoFillZeroPercentages();
             
         } catch (err) {
             showError(err.message);
@@ -673,6 +673,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         updateAllSums();
         addLog("system", "⚡ Đã phân phối đều tỷ lệ % các lựa chọn đáp án.");
+    }
+
+    function autoFillZeroPercentages() {
+        if (!parsedForm) return;
+        
+        const inputs = document.querySelectorAll('.choice-percent-input');
+        inputs.forEach(input => {
+            input.value = 0;
+        });
+        updateAllSums();
+        addLog("system", "ℹ️ Đã tải biểu mẫu. Tất cả các đáp án được đặt mặc định là 0%.");
     }
 
     function autoFillDefaultPercentages() {
