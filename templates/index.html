@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Điền Biểu Mẫu Tự Động - Google Forms Auto-Filler</title>
+    <!-- Inter Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-bolt-lightning header-icon"></i>
+                <div>
+                    <h1>Google Forms Auto-Filler</h1>
+                    <p class="subtitle">Hệ thống tạo lượt trả lời ảo theo tỷ lệ phần trăm</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body Grid -->
+        <main class="app-main">
+            <!-- Step 1: Input URL -->
+            <section class="card input-section">
+                <div class="card-header">
+                    <h2><span class="step-badge">1</span> Nhập Đường Dẫn Biểu Mẫu</h2>
+                </div>
+                <div class="card-body">
+                    <p class="description">
+                        Dán đường dẫn công khai (dạng <code>/viewform</code> hoặc <code>/formResponse</code>) của Google Biểu Mẫu. Đảm bảo form ở chế độ công khai và không giới hạn 1 câu trả lời.
+                    </p>
+                    <div class="input-group">
+                        <input type="text" id="form-url" placeholder="https://docs.google.com/forms/d/e/.../viewform" />
+                        <button id="btn-parse" class="btn btn-primary">
+                            <span id="btn-parse-text"><i class="fa-solid fa-magnifying-glass"></i> Phân Tích Form</span>
+                            <span id="btn-parse-spinner" class="spinner hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                        </button>
+                    </div>
+                    <div id="parse-error" class="alert alert-danger hidden"></div>
+                </div>
+            </section>
+
+            <!-- Campaign Settings & Form Config (Hidden until parsed) -->
+            <div id="campaign-workspace" class="hidden">
+                <div class="workspace-grid">
+                    <!-- Config Column -->
+                    <div class="config-column">
+                        <!-- Campaign Parameters -->
+                        <section class="card settings-card">
+                            <div class="card-header">
+                                <h2><span class="step-badge">2</span> Thiết Lập Chiến Dịch</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="settings-row">
+                                    <div class="form-group">
+                                        <label for="submit-count">Số lượt điền biểu mẫu:</label>
+                                        <input type="number" id="submit-count" value="10" min="1" max="5000" />
+                                        <span class="input-hint">Ví dụ: 450 lượt</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="submit-delay">Khoảng trễ giữa các lượt (giây):</label>
+                                        <input type="number" id="submit-delay" value="1.0" min="0.1" step="0.1" max="60.0" />
+                                        <span class="input-hint">Tránh Google chặn spam</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-info-summary">
+                                    <div class="form-info-title"><i class="fa-solid fa-file-signature"></i> <span id="form-title-display">...</span></div>
+                                    <p id="form-desc-display" class="form-info-desc">...</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Form Schema Configuration -->
+                        <section class="card schema-card">
+                            <div class="card-header flex-header">
+                                <h2><span class="step-badge">3</span> Cấu Hình Đáp Án Tự Động</h2>
+                                <div style="display: flex; gap: 8px;">
+                                    <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm" title="Nhập danh sách tỷ lệ % từ văn bản">
+                                        <i class="fa-solid fa-file-import"></i> Nhập nhanh % từ văn bản
+                                    </button>
+                                    <button id="btn-auto-fill-percent" class="btn btn-secondary btn-sm" title="Chia đều % các đáp án trắc nghiệm">
+                                        <i class="fa-solid fa-divide"></i> Chia Đều %
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="form-questions-container">
+                                    <!-- Dynamic Questions Will Be Rendered Here -->
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Runner / Logs Column -->
+                    <div class="runner-column">
+                        <!-- Run Panel -->
+                        <section class="card runner-card">
+                            <div class="card-header">
+                                <h2><span class="step-badge">4</span> Trạng Thái Điền Biểu Mẫu</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="stats-grid">
+                                    <div class="stat-box">
+                                        <div class="stat-value" id="stat-success">0</div>
+                                        <div class="stat-label">Thành Công</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-value" id="stat-failed">0</div>
+                                        <div class="stat-label">Thất Bại</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-value" id="stat-progress">0/0</div>
+                                        <div class="stat-label">Tiến Độ</div>
+                                    </div>
+                                </div>
+
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-bg">
+                                        <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+                                    </div>
+                                    <div class="progress-percentage" id="progress-percent-label">0%</div>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button id="btn-start" class="btn btn-success btn-lg btn-block">
+                                        <i class="fa-solid fa-play"></i> Bắt Đầu Chạy
+                                    </button>
+                                    <button id="btn-stop" class="btn btn-danger btn-lg btn-block hidden">
+                                        <i class="fa-solid fa-square-check"></i> Đang Dừng...
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Log Terminal -->
+                        <section class="card terminal-card">
+                            <div class="card-header flex-header">
+                                <h2>Nhật Ký Chạy</h2>
+                                <button id="btn-clear-logs" class="btn btn-secondary btn-xs"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                            </div>
+                            <div class="terminal-body" id="logs-container">
+                                <div class="log-line system-log">Nhấn "Phân Tích Form" ở Bước 1 để bắt đầu...</div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <p>Phát triển chuyên nghiệp cho nhu cầu giả lập dữ liệu Google Forms sạch. Vui lòng sử dụng đúng mục đích.</p>
+        </footer>
+    </div>
+
+    <!-- Modal for importing text percentages -->
+    <div id="import-text-modal" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-file-import"></i> Nhập tỷ lệ % từ văn bản báo cáo</h3>
+                <button class="modal-close-btn" id="btn-close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="description" style="font-size:12px; margin-bottom:10px;">
+                    Dán nội dung báo cáo khảo sát có chứa tỷ lệ % của các câu hỏi vào ô dưới đây. Hệ thống sẽ tự động tìm kiếm câu hỏi tương ứng và tự động điền các ô phần trăm.
+                </p>
+                <textarea id="import-text-area" placeholder="Ví dụ:&#10;Câu 1.1: Bạn thuộc nhóm nào sau đây?&#10;Sinh viên Đại học Phenikaa: 55% (247 người)&#10;Sinh viên trường đại học khác: 20% (90 người)..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-import" class="btn btn-secondary btn-sm">Hủy bỏ</button>
+                <button id="btn-submit-import" class="btn btn-primary btn-sm"><i class="fa-solid fa-check"></i> Xác nhận & Điền %</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
+
