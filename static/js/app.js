@@ -321,96 +321,323 @@ const defaultPercentagesMap = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
+    // Check Auth State first
+    checkAuthState();
+
+    // 1. AUTHENTICATION & LOGIN/REGISTER HANDLERS
+    const loginScreen = document.getElementById('login-screen');
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    const btnLogin = document.getElementById('btn-login');
+    const btnRegister = document.getElementById('btn-register');
+    const btnLogout = document.getElementById('btn-logout');
+    const switchToRegister = document.getElementById('switch-to-register');
+    const switchToLogin = document.getElementById('switch-to-login');
+    const loginFormContainer = document.getElementById('login-form-container');
+    const registerFormContainer = document.getElementById('register-form-container');
+    const userDisplayName = document.getElementById('user-display-name');
+
+    if (switchToRegister) {
+        switchToRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginFormContainer.classList.add('hidden');
+            registerFormContainer.classList.remove('hidden');
+        });
+    }
+
+    if (switchToLogin) {
+        switchToLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerFormContainer.classList.add('hidden');
+            loginFormContainer.classList.remove('hidden');
+        });
+    }
+
+    if (btnLogin) {
+        btnLogin.addEventListener('click', () => {
+            const usernameInput = document.getElementById('login-username').value.trim();
+            if (!usernameInput) {
+                alert("Vui lòng nhập tên đăng nhập.");
+                return;
+            }
+            // Save mock user session
+            const user = { name: usernameInput };
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            checkAuthState();
+        });
+    }
+
+    if (btnRegister) {
+        btnRegister.addEventListener('click', () => {
+            const nameInput = document.getElementById('register-name').value.trim();
+            const usernameInput = document.getElementById('register-username').value.trim();
+            if (!nameInput || !usernameInput) {
+                alert("Vui lòng điền đầy đủ họ tên và tên đăng nhập.");
+                return;
+            }
+            const user = { name: nameInput };
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            checkAuthState();
+        });
+    }
+
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            checkAuthState();
+        });
+    }
+
+    function checkAuthState() {
+        const userJson = localStorage.getItem('currentUser');
+        if (userJson) {
+            const user = JSON.parse(userJson);
+            if (userDisplayName) userDisplayName.textContent = user.name;
+            if (loginScreen) loginScreen.classList.add('hidden');
+            if (dashboardScreen) dashboardScreen.classList.remove('hidden');
+            // Render previously loaded forms on dashboard load
+            renderSavedFormsList();
+        } else {
+            if (loginScreen) loginScreen.classList.remove('hidden');
+            if (dashboardScreen) dashboardScreen.classList.add('hidden');
+        }
+    }
+
+    // 2. DASHBOARD NAVIGATION HANDLERS (PANELS SWITCHING)
+    const menuItems = document.querySelectorAll('.menu-item');
+    const contentPanels = document.querySelectorAll('.content-panel');
+
+    menuItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            if (item.classList.contains('disabled-menu')) {
+                e.preventDefault();
+                return;
+            }
+            e.preventDefault();
+            const targetPanelId = item.dataset.panel;
+            
+            // Remove active classes
+            menuItems.forEach(i => i.classList.remove('active'));
+            contentPanels.forEach(p => p.classList.remove('active'));
+
+            // Set active
+            item.classList.add('active');
+            const targetPanel = document.getElementById(targetPanelId);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+
+            // Sync empty screen panels logic
+            if (targetPanelId === 'panel-active-form-view') {
+                toggleCampaignWorkspaceViews();
+            } else if (targetPanelId === 'panel-manage-form') {
+                renderSavedFormsList();
+            }
+        });
+    });
+
+    const btnNavToHome = document.getElementById('btn-nav-to-home');
+    if (btnNavToHome) {
+        btnNavToHome.addEventListener('click', () => {
+            document.querySelector('.menu-item[data-panel="panel-home"]').click();
+        });
+    }
+
+    function toggleCampaignWorkspaceViews() {
+        const workspace = document.getElementById('campaign-workspace');
+        const emptyState = document.getElementById('empty-active-state');
+        if (parsedForm) {
+            workspace.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+        } else {
+            workspace.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+        }
+    }
+
+    // 3. CORE FORM PARSING
     const btnParse = document.getElementById('btn-parse');
     const btnParseText = document.getElementById('btn-parse-text');
     const btnParseSpinner = document.getElementById('btn-parse-spinner');
     const formUrlInput = document.getElementById('form-url');
     const parseError = document.getElementById('parse-error');
-    const workspace = document.getElementById('campaign-workspace');
     
     const formTitleDisplay = document.getElementById('form-title-display');
     const formDescDisplay = document.getElementById('form-desc-display');
     const questionsContainer = document.getElementById('form-questions-container');
+    const checklistContainer = document.getElementById('question-checklist-container');
     
     const btnAutoFillPercent = document.getElementById('btn-auto-fill-percent');
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
     const btnClearLogs = document.getElementById('btn-clear-logs');
     
-    const statSuccess = document.getElementById('stat-success');
-    const statFailed = document.getElementById('stat-failed');
-    const statProgress = document.getElementById('stat-progress');
+    const statSuccess = document.getElementById('run-success');
+    const statFailed = document.getElementById('run-failed');
+    const statProgress = document.getElementById('run-progress');
     const progressBarFill = document.getElementById('progress-bar-fill');
-    const progressPercentLabel = document.getElementById('progress-percent-label');
     const logsContainer = document.getElementById('logs-container');
 
-    // Parse Form Link
-    btnParse.addEventListener('click', async () => {
-        const url = formUrlInput.value.trim();
-        if (!url) {
-            showError("Vui lòng nhập đường dẫn biểu mẫu.");
+    if (btnParse) {
+        btnParse.addEventListener('click', async () => {
+            const url = formUrlInput.value.trim();
+            if (!url) {
+                showError("Vui lòng nhập đường dẫn biểu mẫu.");
+                return;
+            }
+
+            btnParse.disabled = true;
+            if (btnParseText) btnParseText.classList.add('hidden');
+            if (btnParseSpinner) btnParseSpinner.classList.remove('hidden');
+            parseError.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/parse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || "Có lỗi xảy ra khi phân tích form.");
+                }
+
+                parsedForm = data;
+
+                // Persist form to localStorage database
+                saveFormToLocalStorage(url, data);
+                
+                // Load details
+                formTitleDisplay.textContent = data.title;
+                formDescDisplay.textContent = data.description || "Không có mô tả.";
+                
+                if (data.requires_signin) {
+                    showError("CẢNH BÁO: Form này yêu cầu đăng nhập tài khoản Google (Giới hạn 1 câu trả lời). Hệ thống có thể không điền tự động được.");
+                }
+
+                // Render both Questions and Right-side Question Checklist
+                renderQuestions(data);
+                renderQuestionChecklist(data);
+                
+                // Show campaign Workspace & Navigate to it
+                document.querySelector('.menu-item[data-panel="panel-active-form-view"]').click();
+                addLog("system", `Đã tải thành công biểu mẫu: "${data.title}"`);
+                
+                autoFillZeroPercentages();
+                
+            } catch (err) {
+                showError(err.message);
+                addLog("error", `Lỗi: ${err.message}`);
+            } finally {
+                btnParse.disabled = false;
+                if (btnParseText) btnParseText.classList.remove('hidden');
+                if (btnParseSpinner) btnParseSpinner.classList.add('hidden');
+            }
+        });
+    }
+
+    // Save and retrieve loaded forms database in localStorage
+    function saveFormToLocalStorage(url, data) {
+        let saved = JSON.parse(localStorage.getItem('saved_forms') || '[]');
+        if (!saved.some(f => f.url === url)) {
+            saved.push({
+                url: url,
+                title: data.title,
+                description: data.description || '',
+                data: data
+            });
+            localStorage.setItem('saved_forms', JSON.stringify(saved));
+        }
+    }
+
+    function renderSavedFormsList() {
+        const manageContainer = document.getElementById('panel-manage-form');
+        const emptyState = document.getElementById('empty-manage-state');
+        const saved = JSON.parse(localStorage.getItem('saved_forms') || '[]');
+
+        // Remove old lists if any
+        const oldList = document.getElementById('saved-forms-list-container');
+        if (oldList) oldList.remove();
+
+        if (saved.length === 0) {
+            emptyState.classList.remove('hidden');
             return;
         }
 
-        // UI Loading
-        btnParse.disabled = true;
-        btnParseText.classList.add('hidden');
-        btnParseSpinner.classList.remove('hidden');
-        parseError.classList.add('hidden');
-        workspace.classList.add('hidden');
-        
-        try {
-            const response = await fetch('/api/parse', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
+        emptyState.classList.add('hidden');
+
+        const listContainer = document.createElement('div');
+        listContainer.id = 'saved-forms-list-container';
+        listContainer.style.marginTop = '20px';
+
+        let listHtml = `
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-list-check"></i> Các biểu mẫu của bạn</h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <table class="premium-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border); background-color: rgba(10, 14, 23, 0.4);">
+                                <th style="padding: 14px 20px;">TÊN BIỂU MẪU</th>
+                                <th style="padding: 14px 20px; display: none;">MÔ TẢ</th>
+                                <th style="padding: 14px 20px; text-align: right;">HÀNH ĐỘNG</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        saved.forEach((form, idx) => {
+            listHtml += `
+                <tr style="border-bottom: 1px solid var(--border);" class="table-row-hover">
+                    <td style="padding: 16px 20px; font-weight: 700; color: var(--text-main); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${form.title}">${form.title}</td>
+                    <td style="padding: 16px 20px; text-align: right;">
+                        <button class="btn btn-primary btn-xs btn-open-saved" data-idx="${idx}">
+                            <i class="fa-solid fa-sliders"></i> Cấu hình chiến dịch
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        listHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        listContainer.innerHTML = listHtml;
+        manageContainer.appendChild(listContainer);
+
+        // Attach clicks to Open buttons
+        document.querySelectorAll('.btn-open-saved').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.idx);
+                const form = saved[idx];
+                parsedForm = form.data;
+
+                formTitleDisplay.textContent = parsedForm.title;
+                formDescDisplay.textContent = parsedForm.description || "Không có mô tả.";
+                
+                renderQuestions(parsedForm);
+                renderQuestionChecklist(parsedForm);
+                
+                document.querySelector('.menu-item[data-panel="panel-active-form-view"]').click();
+                addLog("system", `Đã tải cấu hình biểu mẫu lưu trữ: "${parsedForm.title}"`);
             });
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || "Có lỗi xảy ra khi phân tích form.");
-            }
+        });
+    }
 
-            parsedForm = data;
-            
-            // Render basic form details
-            formTitleDisplay.textContent = data.title;
-            formDescDisplay.textContent = data.description || "Không có mô tả.";
-            
-            // Check signin requirement
-            if (data.requires_signin) {
-                showError("CẢNH BÁO: Form này yêu cầu đăng nhập tài khoản Google (Giới hạn 1 câu trả lời hoặc Thu thập email). Tool có thể không điền được nếu không tắt cấu hình này.");
-            }
-
-            // Render Form Questions UI
-            renderQuestions(data);
-            
-            // Show Workspace
-            workspace.classList.remove('hidden');
-            addLog("system", `Đã phân tích thành công biểu mẫu: "${data.title}"`);
-            
-            // Auto fill zero percentages
-            autoFillZeroPercentages();
-            
-        } catch (err) {
-            showError(err.message);
-            addLog("error", `Lỗi: ${err.message}`);
-        } finally {
-            btnParse.disabled = false;
-            btnParseText.classList.remove('hidden');
-            btnParseSpinner.classList.add('hidden');
-        }
-    });
-
-    // Render Questions config inside container
+    // 4. RENDER DETAILED QUESTION CARDS (SCREENSHOT 3)
     function renderQuestions(formData) {
         questionsContainer.innerHTML = '';
+        let qIndex = 1;
         
         formData.pages.forEach(page => {
             const pageHeader = document.createElement('div');
             pageHeader.className = 'page-header-separator';
-            pageHeader.innerHTML = `<h3 style="font-size: 13px; margin: 15px 0 10px 0; color: var(--text-muted); text-transform: uppercase;">${page.title}</h3>`;
+            pageHeader.innerHTML = `<h3 style="font-size: 12px; margin: 15px 0 10px 0; color: var(--text-hint); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${page.title}</h3>`;
             questionsContainer.appendChild(pageHeader);
 
             page.elements.forEach(elem => {
@@ -419,26 +646,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 qDiv.dataset.id = elem.id;
                 qDiv.dataset.type = elem.type;
 
-                // Title
+                // Render Header Title & Status Badges
                 let reqHtml = elem.required ? `<span class="question-required">*</span>` : '';
-                let metaHtml = `<span class="question-meta">${elem.type}</span>`;
+                let metaHtml = `<span class="question-badge">${elem.type}</span>`;
+                let sumStatusHtml = ['Radio', 'Dropdown', 'Scale'].includes(elem.type) ? 
+                    `<span class="sum-status-badge invalid">Tổng: 0% (Thiếu 100%)</span>` : '';
                 
                 let descHtml = elem.description ? `<p class="question-desc">${elem.description}</p>` : '';
 
                 let innerHtml = `
                     <div class="question-header">
-                        <div class="question-title">${elem.name}${reqHtml}</div>
-                        ${metaHtml}
+                        <div class="question-title-area">
+                            <div class="question-number">${qIndex}</div>
+                            <div class="question-title">${elem.name}${reqHtml}</div>
+                        </div>
+                        <div class="question-meta-group">
+                            ${sumStatusHtml}
+                            ${metaHtml}
+                        </div>
                     </div>
                     ${descHtml}
                 `;
 
-                // Render dynamic controls depending on type
+                // Render dynamic choices in GRID style (Screenshot 3)
                 if (['Short', 'Paragraph', 'UserEmail'].includes(elem.type)) {
-                    // Text generator strategy select
                     innerHtml += `
                         <div class="strategy-select-container">
-                            <label style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom:4px;">Bộ sinh dữ liệu ảo:</label>
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600; display:block; margin-bottom:4px;">Bộ sinh dữ liệu ảo:</label>
                             <select class="strategy-select" onchange="handleStrategyChange(this)">
                                 <option value="default">(Mặc định tự nhận diện)</option>
                                 <option value="vi_name">Họ & Tên Tiếng Việt</option>
@@ -454,75 +688,62 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `;
                 } else if (['Radio', 'Dropdown', 'Scale'].includes(elem.type)) {
-                    // Single choice percentages
                     let choicesHtml = '';
                     elem.choices.forEach(choice => {
-                        choicesHtml += createChoiceRow(choice, false);
+                        choicesHtml += createChoiceBox(choice, false);
                     });
                     
                     if (elem.has_other) {
-                        choicesHtml += createChoiceRow('__other_option__', true);
+                        choicesHtml += createChoiceBox('__other_option__', true);
                     }
 
                     innerHtml += `
-                        <div class="choices-percent-container">
-                            <label style="font-size: 11.5px; color: var(--text-main); font-weight: 500; display:block; margin-bottom:8px;">Phân phối tỷ lệ đáp án (%):</label>
-                            <div class="choices-list">
-                                ${choicesHtml}
-                            </div>
-                            <div class="choices-summary">
-                                <span>Tổng cộng:</span>
-                                <span class="total-percent-display sum-invalid">0%</span>
-                            </div>
+                        <div class="choices-grid">
+                            ${choicesHtml}
                         </div>
                     `;
                 } else if (elem.type === 'Checkboxes') {
-                    // Multi choice percentages
                     let choicesHtml = '';
                     elem.choices.forEach(choice => {
-                        choicesHtml += createChoiceRow(choice, false);
+                        choicesHtml += createChoiceBox(choice, false);
                     });
                     
                     if (elem.has_other) {
-                        choicesHtml += createChoiceRow('__other_option__', true);
+                        choicesHtml += createChoiceBox('__other_option__', true);
                     }
 
                     innerHtml += `
-                        <div class="choices-percent-container">
-                            <label style="font-size: 11.5px; color: var(--text-main); font-weight: 500; display:block; margin-bottom:8px;">Tỷ lệ xuất hiện của mỗi đáp án (%):</label>
-                            <div class="choices-list checkbox-choices-list">
-                                ${choicesHtml}
-                            </div>
-                            <div class="choices-summary">
-                                <span style="font-size:11px; color: var(--text-hint);">* Tỷ lệ mỗi hộp kiểm độc lập (0-100%), không cần tổng bằng 100%.</span>
-                            </div>
+                        <div class="choices-grid">
+                            ${choicesHtml}
+                        </div>
+                        <div style="font-size:11px; color: var(--text-hint); margin-top: 10px;">
+                            * Tỷ lệ mỗi hộp kiểm độc lập (0-100%), không yêu cầu tổng % bằng 100%.
                         </div>
                     `;
                 } else if (['RadioGrid', 'CheckboxGrid'].includes(elem.type)) {
-                    // Grids (Table)
                     let gridHtml = '';
                     elem.rows.forEach(row => {
                         let colsHtml = '';
                         elem.choices.forEach(col => {
-                            colsHtml += createChoiceRow(col, false);
+                            colsHtml += createChoiceBox(col, false);
                         });
                         
                         let isRadio = elem.type === 'RadioGrid';
                         let sumLabelHtml = isRadio ? `
-                            <div class="choices-summary" style="margin-top: 4px;">
-                                <span>Tổng cộng:</span>
-                                <span class="total-percent-display sum-invalid">0%</span>
+                            <div class="choices-summary" style="margin-top: 8px;">
+                                <span>Tổng hàng:</span>
+                                <span class="total-percent-display sum-invalid" style="font-weight:700;">0%</span>
                             </div>
                         ` : `
-                            <div class="choices-summary" style="margin-top: 4px;">
-                                <span style="font-size:10px; color: var(--text-hint);">* Độc lập từng ô</span>
+                            <div class="choices-summary" style="margin-top: 8px;">
+                                <span style="font-size:10px; color: var(--text-hint);">* Từng ô độc lập</span>
                             </div>
                         `;
 
                         gridHtml += `
-                            <div class="grid-row-container" data-row-name="${row}">
-                                <div class="grid-row-title"><i class="fa-solid fa-chevron-right" style="font-size:9px;"></i> Hàng: ${row}</div>
-                                <div class="choices-list">
+                            <div class="grid-row-container" data-row-name="${row}" style="margin-bottom:14px;">
+                                <div class="grid-row-title"><i class="fa-solid fa-chevron-right" style="font-size:9px; color:var(--primary);"></i> Hàng: ${row}</div>
+                                <div class="choices-grid">
                                     ${colsHtml}
                                 </div>
                                 ${sumLabelHtml}
@@ -531,38 +752,89 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     innerHtml += `
-                        <div class="choices-percent-container">
-                            <label style="font-size: 11.5px; color: var(--text-main); font-weight: 500; display:block; margin-bottom:8px;">Thiết lập từng hàng:</label>
+                        <div style="margin-top: 10px;">
                             ${gridHtml}
                         </div>
-                    `;
-                } else {
-                    innerHtml += `
-                        <p style="font-size: 12px; color: var(--text-hint);"><i class="fa-solid fa-gears"></i> Bộ sinh dữ liệu tự động cho kiểu ${elem.type}</p>
                     `;
                 }
 
                 qDiv.innerHTML = innerHtml;
                 questionsContainer.appendChild(qDiv);
-            }
-        );
+                qIndex++;
+            });
         });
 
-        // Attach change events to all percentage inputs to update sums
+        // Attach events
         attachPercentInputEvents();
     }
 
-    function createChoiceRow(choiceVal, isOther) {
-        let labelText = isOther ? 'Đáp án khác (Điền chữ tự động)' : choiceVal;
+    function createChoiceBox(choiceVal, isOther) {
+        let labelText = isOther ? 'Đáp án khác (Tự động)' : choiceVal;
         return `
-            <div class="choice-row" data-choice-value="${choiceVal}">
-                <span class="choice-label" title="${labelText}">${labelText}</span>
-                <div class="choice-input-wrapper">
-                    <input type="number" class="choice-percent-input" value="0" min="0" max="100" />
-                    <span class="percent-sign">%</span>
+            <div class="choice-box" data-choice-value="${choiceVal}">
+                <div class="choice-box-label" title="${labelText}">${labelText}</div>
+                <div class="choice-box-input-wrapper">
+                    <input type="number" class="choice-percent-input choice-box-input" value="0" min="0" max="100" />
+                    <span class="choice-box-suffix">%</span>
                 </div>
             </div>
         `;
+    }
+
+    // 5. RENDER RIGHT-SIDE CHECKLIST STATUS PANEL (SCREENSHOT 3)
+    function renderQuestionChecklist(formData) {
+        checklistContainer.innerHTML = '';
+        let index = 1;
+
+        formData.pages.forEach(page => {
+            page.elements.forEach(elem => {
+                // Only choice questions require status tracking in the list
+                if (['Radio', 'Dropdown', 'Scale', 'Checkboxes', 'RadioGrid', 'CheckboxGrid'].includes(elem.type)) {
+                    const item = document.createElement('div');
+                    item.className = 'checklist-item';
+                    item.dataset.qId = elem.id;
+
+                    let typeText = 'Lựa chọn';
+                    if (elem.type === 'Checkboxes') typeText = 'Hộp kiểm';
+                    else if (elem.type === 'RadioGrid') typeText = 'Hàng Lựa chọn';
+                    else if (elem.type === 'CheckboxGrid') typeText = 'Hàng Hộp kiểm';
+
+                    let iconHtml = `<i class="fa-solid fa-circle-exclamation checklist-item-status invalid"></i>`;
+                    if (elem.type === 'Checkboxes' || elem.type === 'CheckboxGrid') {
+                        iconHtml = `<i class="fa-solid fa-circle-check checklist-item-status valid"></i>`;
+                    }
+
+                    item.innerHTML = `
+                        <div class="checklist-item-index">${index}</div>
+                        <div class="checklist-item-info">
+                            <div class="checklist-item-title" title="${elem.name}">${elem.name}</div>
+                            <div class="checklist-item-type">${typeText}</div>
+                        </div>
+                        <div class="checklist-item-status-wrapper">
+                            ${iconHtml}
+                        </div>
+                    `;
+
+                    // Click event to scroll to question card smoothly
+                    item.addEventListener('click', () => {
+                        document.querySelectorAll('.checklist-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+
+                        const qCard = document.querySelector(`.question-item[data-id="${elem.id}"]`);
+                        if (qCard) {
+                            qCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            qCard.style.borderColor = 'var(--primary)';
+                            setTimeout(() => {
+                                qCard.style.borderColor = '';
+                            }, 1000);
+                        }
+                    });
+
+                    checklistContainer.appendChild(item);
+                }
+                index++;
+            });
+        });
     }
 
     window.handleStrategyChange = function(selectElem) {
@@ -574,17 +846,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Calculate sum of percentages for single choice inputs
     function attachPercentInputEvents() {
         const percentInputs = document.querySelectorAll('.choice-percent-input');
         percentInputs.forEach(input => {
             input.addEventListener('input', () => {
-                // Keep values within 0-100
                 let val = parseInt(input.value);
                 if (isNaN(val) || val < 0) input.value = 0;
                 if (val > 100) input.value = 100;
                 
-                // Recalculate sums
                 updateAllSums();
             });
         });
@@ -592,24 +861,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateAllSums() {
-        // 1. Regular Radio/Dropdown/Scale
         const qItems = document.querySelectorAll('.question-item');
         qItems.forEach(qItem => {
+            const id = qItem.dataset.id;
             const type = qItem.dataset.type;
+            
+            let isValid = true;
+            
             if (['Radio', 'Dropdown', 'Scale'].includes(type)) {
                 const inputs = qItem.querySelectorAll('.choice-percent-input');
                 let sum = 0;
                 inputs.forEach(input => sum += parseInt(input.value) || 0);
                 
-                const sumDisplay = qItem.querySelector('.total-percent-display');
-                sumDisplay.textContent = sum + '%';
-                if (sum === 100) {
-                    sumDisplay.className = 'total-percent-display sum-valid';
-                } else {
-                    sumDisplay.className = 'total-percent-display sum-invalid';
+                const badge = qItem.querySelector('.sum-status-badge');
+                if (badge) {
+                    if (sum === 100) {
+                        badge.textContent = `Tổng: 100% (Hợp lệ)`;
+                        badge.className = 'sum-status-badge valid';
+                        qItem.classList.remove('invalid-question');
+                        qItem.classList.add('valid-question');
+                    } else {
+                        badge.textContent = `Tổng: ${sum}% (Thiếu ${100 - sum}%)`;
+                        if (sum > 100) {
+                            badge.textContent = `Tổng: ${sum}% (Thừa ${sum - 100}%)`;
+                        }
+                        badge.className = 'sum-status-badge invalid';
+                        qItem.classList.remove('valid-question');
+                        qItem.classList.add('invalid-question');
+                        isValid = false;
+                    }
                 }
             } else if (type === 'RadioGrid') {
-                // RadioGrid rows sum
                 const rows = qItem.querySelectorAll('.grid-row-container');
                 rows.forEach(row => {
                     const inputs = row.querySelectorAll('.choice-percent-input');
@@ -617,19 +899,46 @@ document.addEventListener('DOMContentLoaded', () => {
                     inputs.forEach(input => sum += parseInt(input.value) || 0);
                     
                     const sumDisplay = row.querySelector('.total-percent-display');
-                    sumDisplay.textContent = sum + '%';
-                    if (sum === 100) {
-                        sumDisplay.className = 'total-percent-display sum-valid';
-                    } else {
-                        sumDisplay.className = 'total-percent-display sum-invalid';
+                    if (sumDisplay) {
+                        sumDisplay.textContent = sum + '%';
+                        if (sum === 100) {
+                            sumDisplay.className = 'total-percent-display sum-valid';
+                        } else {
+                            sumDisplay.className = 'total-percent-display sum-invalid';
+                            isValid = false;
+                        }
                     }
                 });
+                
+                if (isValid) {
+                    qItem.classList.remove('invalid-question');
+                    qItem.classList.add('valid-question');
+                } else {
+                    qItem.classList.remove('valid-question');
+                    qItem.classList.add('invalid-question');
+                }
+            } else {
+                qItem.classList.remove('invalid-question');
+                qItem.classList.add('valid-question');
+            }
+
+            // Update checklist icon status
+            const checklistItem = document.querySelector(`.checklist-item[data-q-id="${id}"]`);
+            if (checklistItem) {
+                const statusWrapper = checklistItem.querySelector('.checklist-item-status-wrapper');
+                if (isValid) {
+                    statusWrapper.innerHTML = `<i class="fa-solid fa-circle-check checklist-item-status valid"></i>`;
+                } else {
+                    statusWrapper.innerHTML = `<i class="fa-solid fa-circle-exclamation checklist-item-status invalid"></i>`;
+                }
             }
         });
     }
 
-    // Auto equal distribution
-    btnAutoFillPercent.addEventListener('click', autoFillEqualPercentages);
+    // Auto equal distribution logic
+    if (btnAutoFillPercent) {
+        btnAutoFillPercent.addEventListener('click', autoFillEqualPercentages);
+    }
 
     function autoFillEqualPercentages() {
         if (!parsedForm) return;
@@ -642,10 +951,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (inputs.length === 0) return;
                 
                 if (type === 'Checkboxes') {
-                    // Checkboxes: default to 50% for all options
                     inputs.forEach(input => input.value = 50);
                 } else {
-                    // Single choice: distribute to equal 100%
                     let base = Math.floor(100 / inputs.length);
                     let remainder = 100 % inputs.length;
                     
@@ -695,8 +1002,6 @@ document.addEventListener('DOMContentLoaded', () => {
         qItems.forEach(qItem => {
             const type = qItem.dataset.type;
             const qTitle = qItem.querySelector('.question-title').textContent.replace('*', '').trim();
-            
-            // Try to find if this question title has a hardcoded default percentages
             const matchedKey = Object.keys(defaultPercentagesMap).find(k => fuzzyMatch(k, qTitle));
             
             if (matchedKey) {
@@ -704,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const questionConfig = defaultPercentagesMap[matchedKey];
                 
                 if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                    const choiceRows = qItem.querySelectorAll('.choice-row');
+                    const choiceRows = qItem.querySelectorAll('.choice-box');
                     let filledCount = 0;
                     
                     choiceRows.forEach(row => {
@@ -717,7 +1022,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     
-                    // If some choices were not matched, default them to 0
                     if (filledCount < choiceRows.length) {
                         choiceRows.forEach(row => {
                             const input = row.querySelector('.choice-percent-input');
@@ -734,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         if (matchedRowKey) {
                             const rowConfig = defaultPercentagesMap[matchedRowKey];
-                            const choiceRows = container.querySelectorAll('.choice-row');
+                            const choiceRows = container.querySelectorAll('.choice-box');
                             choiceRows.forEach(row => {
                                 const choiceVal = row.dataset.choiceValue;
                                 const matchedChoiceKey = Object.keys(rowConfig).find(k => fuzzyMatch(k, choiceVal));
@@ -745,7 +1049,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             });
                         } else {
-                            // Fallback to equal
                             const inputs = container.querySelectorAll('.choice-percent-input');
                             if (type === 'CheckboxGrid') {
                                 inputs.forEach(input => input.value = 50);
@@ -760,7 +1063,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             } else {
-                // Fallback to equal distribution for this question
                 if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
                     const inputs = qItem.querySelectorAll('.choice-percent-input');
                     if (inputs.length > 0) {
@@ -802,118 +1104,134 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Start Campaign
-    btnStart.addEventListener('click', async () => {
-        if (!parsedForm) return;
+    // 6. START CAMPAIGN HANDLER
+    if (btnStart) {
+        btnStart.addEventListener('click', async () => {
+            if (!parsedForm) return;
 
-        // Validation checks
-        let validationFailed = false;
-        let invalidQuestionNames = [];
-        
-        const qItems = document.querySelectorAll('.question-item');
-        qItems.forEach(qItem => {
-            const type = qItem.dataset.type;
-            const qTitle = qItem.querySelector('.question-title').textContent.replace('*', '').trim();
+            // Validation checks
+            let validationFailed = false;
+            let invalidQuestionNames = [];
             
-            if (['Radio', 'Dropdown', 'Scale'].includes(type)) {
-                const sumDisplay = qItem.querySelector('.total-percent-display');
-                if (sumDisplay.classList.contains('sum-invalid')) {
-                    validationFailed = true;
-                    invalidQuestionNames.push(qTitle);
-                }
-            } else if (type === 'RadioGrid') {
-                const rows = qItem.querySelectorAll('.grid-row-container');
-                rows.forEach(row => {
-                    const sumDisplay = row.querySelector('.total-percent-display');
-                    const rowTitle = row.querySelector('.grid-row-title').textContent.trim();
-                    if (sumDisplay.classList.contains('sum-invalid')) {
+            const qItems = document.querySelectorAll('.question-item');
+            qItems.forEach(qItem => {
+                const type = qItem.dataset.type;
+                const qTitle = qItem.querySelector('.question-title').textContent.replace('*', '').trim();
+                
+                if (['Radio', 'Dropdown', 'Scale'].includes(type)) {
+                    const badge = qItem.querySelector('.sum-status-badge');
+                    if (badge && badge.classList.contains('invalid')) {
                         validationFailed = true;
-                        invalidQuestionNames.push(`${qTitle} [${rowTitle}]`);
+                        invalidQuestionNames.push(qTitle);
                     }
-                });
-            }
-        });
-
-        if (validationFailed) {
-            alert(`CẢNH BÁO: Vui lòng sửa lại tỷ lệ % của các câu hỏi sau để tổng bằng 100%:\n\n- ${invalidQuestionNames.join('\n- ')}`);
-            return;
-        }
-
-        // Build Payload Config
-        const url = formUrlInput.value.trim();
-        const count = parseInt(document.getElementById('submit-count').value) || 10;
-        const delay = parseFloat(document.getElementById('submit-delay').value) || 1.0;
-        
-        const fields = {};
-        
-        qItems.forEach(qItem => {
-            const id = qItem.dataset.id;
-            const type = qItem.dataset.type;
-            
-            if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
-                const strategy = qItem.querySelector('.strategy-select').value;
-                const static_value = qItem.querySelector('.static-value-input').value;
-                fields[id] = { strategy, static_value };
-            } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                const choices = {};
-                const rows = qItem.querySelectorAll('.choice-row');
-                rows.forEach(row => {
-                    const choiceVal = row.dataset.choiceValue;
-                    const percent = parseInt(row.querySelector('.choice-percent-input').value) || 0;
-                    choices[choiceVal] = percent;
-                });
-                fields[id] = { choices };
-            } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
-                const rowsConfig = {};
-                const rowContainers = qItem.querySelectorAll('.grid-row-container');
-                rowContainers.forEach(container => {
-                    const rowName = container.dataset.rowName;
-                    const choices = {};
-                    const rows = container.querySelectorAll('.choice-row');
+                } else if (type === 'RadioGrid') {
+                    const rows = qItem.querySelectorAll('.grid-row-container');
                     rows.forEach(row => {
-                        const choiceVal = row.dataset.choiceValue;
-                        const percent = parseInt(row.querySelector('.choice-percent-input').value) || 0;
-                        choices[choiceVal] = percent;
+                        const sumDisplay = row.querySelector('.total-percent-display');
+                        const rowTitle = row.querySelector('.grid-row-title').textContent.trim();
+                        if (sumDisplay && sumDisplay.classList.contains('sum-invalid')) {
+                            validationFailed = true;
+                            invalidQuestionNames.push(`${qTitle} [${rowTitle}]`);
+                        }
                     });
-                    rowsConfig[rowName] = { choices };
+                }
+            });
+
+            if (validationFailed) {
+                alert(`⚠️ Không thể chạy chiến dịch!\n\nCác câu hỏi sau chưa đạt đủ 100%:\n- ${invalidQuestionNames.join('\n- ')}`);
+                return;
+            }
+
+            // Gather configurations
+            const submissions = parseInt(document.getElementById('campaign-submissions').value) || 10;
+            const delay = parseFloat(document.getElementById('campaign-delay').value) || 1.0;
+            
+            // Build payload question values
+            const config = {};
+            qItems.forEach(qItem => {
+                const id = qItem.dataset.id;
+                const type = qItem.dataset.type;
+                
+                if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
+                    const select = qItem.querySelector('.strategy-select');
+                    const staticVal = qItem.querySelector('.static-value-input').value;
+                    config[id] = {
+                        type: type,
+                        strategy: select.value,
+                        static_value: staticVal
+                    };
+                } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
+                    const choiceRows = qItem.querySelectorAll('.choice-box');
+                    const options = {};
+                    choiceRows.forEach(row => {
+                        const val = row.dataset.choiceValue;
+                        const pct = parseInt(row.querySelector('.choice-percent-input').value) || 0;
+                        options[val] = pct;
+                    });
+                    config[id] = {
+                        type: type,
+                        options: options
+                    };
+                } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
+                    const rows = qItem.querySelectorAll('.grid-row-container');
+                    const rowConfigs = {};
+                    rows.forEach(row => {
+                        const rowName = row.dataset.rowName;
+                        const choiceRows = row.querySelectorAll('.choice-box');
+                        const options = {};
+                        choiceRows.forEach(crow => {
+                            const val = crow.dataset.choiceValue;
+                            const pct = parseInt(crow.querySelector('.choice-percent-input').value) || 0;
+                            options[val] = pct;
+                        });
+                        rowConfigs[rowName] = options;
+                    });
+                    config[id] = {
+                        type: type,
+                        rows: rowConfigs
+                    };
+                }
+            });
+
+            btnStart.classList.add('hidden');
+            if (btnStop) btnStop.classList.remove('hidden');
+            
+            // Call API
+            try {
+                const res = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        form_data: parsedForm,
+                        config: config,
+                        total_submissions: submissions,
+                        delay: delay
+                    })
                 });
-                fields[id] = { rows: rowsConfig };
+                
+                const resData = await res.json();
+                if (!res.ok) {
+                    throw new Error(resData.error || "Không thể khởi động chiến dịch.");
+                }
+                
+                addLog("system", "🏁 Đã khởi động chiến dịch điền giả lập tự động...");
+                startPolling();
+                
+            } catch (err) {
+                alert(err.message);
+                restoreRunButtons();
             }
         });
+    }
 
-        // UI Transition
-        btnStart.classList.add('hidden');
-        btnStop.classList.remove('hidden');
-        btnStop.disabled = false;
-        btnStop.innerHTML = `<i class="fa-solid fa-stop"></i> Dừng Chiến Dịch`;
-        
-        try {
-            const response = await fetch('/api/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, count, delay, fields })
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error);
-            
-            addLog("system", `🚀 Bắt đầu chiến dịch gửi biểu mẫu...`);
-            
-            // Start Polling Status
-            startPolling();
-        } catch (err) {
-            alert("Lỗi bắt đầu: " + err.message);
-            restoreRunButtons();
-        }
-    });
+    if (btnStop) {
+        btnStop.addEventListener('click', async () => {
+            btnStop.disabled = true;
+            btnStop.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang Dừng...`;
+            await fetch('/api/stop', { method: 'POST' });
+        });
+    }
 
-    // Stop Campaign
-    btnStop.addEventListener('click', async () => {
-        btnStop.disabled = true;
-        btnStop.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang Dừng...`;
-        await fetch('/api/stop', { method: 'POST' });
-    });
-
-    // Status Polling
     function startPolling() {
         if (pollInterval) clearInterval(pollInterval);
         
@@ -922,17 +1240,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await fetch('/api/status');
                 const data = await res.json();
                 
-                // Update stats displays
                 statSuccess.textContent = data.success;
                 statFailed.textContent = data.failed;
                 statProgress.textContent = `${data.current}/${data.total}`;
                 
-                // Progress Bar
                 let pct = data.total > 0 ? Math.floor((data.current / data.total) * 100) : 0;
                 progressBarFill.style.width = pct + '%';
-                progressPercentLabel.textContent = pct + '%';
                 
-                // Render Logs
                 renderLogs(data.logs);
                 
                 if (!data.active) {
@@ -962,25 +1276,29 @@ document.addEventListener('DOMContentLoaded', () => {
             line.textContent = log;
             logsContainer.appendChild(line);
         });
-        
-        // Auto scroll to bottom
         logsContainer.scrollTop = logsContainer.scrollHeight;
     }
 
     function restoreRunButtons() {
-        btnStart.classList.remove('hidden');
-        btnStop.classList.add('hidden');
+        if (btnStart) btnStart.classList.remove('hidden');
+        if (btnStop) {
+            btnStop.classList.add('hidden');
+            btnStop.disabled = false;
+            btnStop.innerHTML = `<i class="fa-solid fa-square-check"></i> Đang Dừng...`;
+        }
     }
 
-    // Clear Logs
-    btnClearLogs.addEventListener('click', () => {
-        logsContainer.innerHTML = '<div class="log-line system-log">Nhật ký đã được xóa.</div>';
-    });
+    if (btnClearLogs) {
+        btnClearLogs.addEventListener('click', () => {
+            logsContainer.innerHTML = '<div class="log-line system-log">Nhật ký đã được xóa.</div>';
+        });
+    }
 
-    // Helpers
     function showError(msg) {
-        parseError.textContent = msg;
-        parseError.classList.remove('hidden');
+        if (parseError) {
+            parseError.textContent = msg;
+            parseError.classList.remove('hidden');
+        }
     }
 
     function addLog(type, msg) {
@@ -992,7 +1310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logsContainer.scrollTop = logsContainer.scrollHeight;
     }
 
-    // Modal & Quick Import Logic
+    // 7. QUICK TEXT IMPORT DIALOG (MODAL HANDLERS)
     const btnImportTextTrigger = document.getElementById('btn-import-text-trigger');
     const importTextModal = document.getElementById('import-text-modal');
     const btnCloseModal = document.getElementById('btn-close-modal');
@@ -1002,14 +1320,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnImportTextTrigger) {
         btnImportTextTrigger.addEventListener('click', () => {
-            importTextModal.classList.remove('hidden');
-            importTextArea.focus();
+            if (importTextModal) importTextModal.classList.remove('hidden');
+            if (importTextArea) importTextArea.focus();
         });
     }
 
     const closeModal = () => {
-        importTextModal.classList.add('hidden');
-        importTextArea.value = '';
+        if (importTextModal) importTextModal.classList.add('hidden');
+        if (importTextArea) importTextArea.value = '';
     };
 
     if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
@@ -1025,7 +1343,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const parsedData = parseTextPercentages(text);
             if (parsedData.length === 0) {
-                alert("Không thể phân tích bất kỳ dữ liệu % nào từ văn bản đã cung cấp. Vui lòng kiểm tra định dạng.");
+                alert("Không thể phân tích dữ liệu % từ văn bản. Vui lòng kiểm tra định dạng.");
                 return;
             }
 
@@ -1035,14 +1353,12 @@ document.addEventListener('DOMContentLoaded', () => {
             qItems.forEach(qItem => {
                 const qTitle = qItem.querySelector('.question-title').textContent.replace('*', '').trim();
                 const type = qItem.dataset.type;
-
-                // Find a matching question in parsedData
                 const matchedQ = parsedData.find(q => fuzzyMatch(q.title, qTitle));
                 
                 if (matchedQ) {
                     matchCount++;
                     if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                        const choiceRows = qItem.querySelectorAll('.choice-row');
+                        const choiceRows = qItem.querySelectorAll('.choice-box');
                         choiceRows.forEach(row => {
                             const choiceVal = row.dataset.choiceValue;
                             const matchedKey = Object.keys(matchedQ.choices).find(k => fuzzyMatch(k, choiceVal));
@@ -1057,7 +1373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const rowName = container.dataset.rowName;
                             const matchedRowQ = parsedData.find(q => fuzzyMatch(q.title, rowName));
                             if (matchedRowQ) {
-                                const choiceRows = container.querySelectorAll('.choice-row');
+                                const choiceRows = container.querySelectorAll('.choice-box');
                                 choiceRows.forEach(row => {
                                     const choiceVal = row.dataset.choiceValue;
                                     const matchedKey = Object.keys(matchedRowQ.choices).find(k => fuzzyMatch(k, choiceVal));
@@ -1072,7 +1388,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Update sums after filling
             updateAllSums();
             closeModal();
             addLog("system", `⚡ Nhập nhanh thành công! Đã tự động điền tỷ lệ % cho ${matchCount} câu hỏi.`);
@@ -1119,4 +1434,3 @@ document.addEventListener('DOMContentLoaded', () => {
         return questionData;
     }
 });
-

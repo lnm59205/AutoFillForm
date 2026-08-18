@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Điền Biểu Mẫu Tự Động - Google Forms Auto-Filler</title>
+    <title>Google Forms Auto-Filler - Dashboard</title>
     <!-- Plus Jakarta Sans & JetBrains Mono Fonts from Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,152 +12,334 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="logo">
-                <i class="fa-solid fa-bolt-lightning header-icon"></i>
-                <div>
-                    <h1>Google Forms Auto-Filler</h1>
-                    <p class="subtitle">Hệ thống tạo lượt trả lời ảo theo tỷ lệ phần trăm</p>
+<body class="cyber-theme">
+    <!-- 1. LOGIN / REGISTER SCREEN -->
+    <div id="login-screen" class="login-overlay">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fa-solid fa-bolt-lightning login-icon"></i>
+                    <h2>AutoFillForm</h2>
+                </div>
+                <p>Smart filling, smart surveys!</p>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="login-form-container">
+                <div class="form-group">
+                    <label>Tên đăng nhập / Email</label>
+                    <input type="text" id="login-username" placeholder="Nhập email hoặc tên tài khoản..." value="Le Ngoc Minh">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="login-password" placeholder="Nhập mật khẩu..." value="••••••••">
+                </div>
+                <button id="btn-login" class="btn btn-primary btn-block" style="margin-top: 10px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập
+                </button>
+                <p class="auth-switch-text">Chưa có tài khoản? <a href="#" id="switch-to-register">Đăng ký ngay</a></p>
+            </div>
+
+            <!-- Register Form (Hidden by default) -->
+            <div id="register-form-container" class="hidden">
+                <div class="form-group">
+                    <label>Họ và tên</label>
+                    <input type="text" id="register-name" placeholder="Ví dụ: Lê Ngọc Minh">
+                </div>
+                <div class="form-group">
+                    <label>Tên đăng nhập / Email</label>
+                    <input type="text" id="register-username" placeholder="Nhập email hoặc tên đăng nhập...">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="register-password" placeholder="Tạo mật khẩu bảo mật...">
+                </div>
+                <button id="btn-register" class="btn btn-primary btn-block" style="margin-top: 10px;">
+                    <i class="fa-solid fa-user-plus"></i> Đăng Ký
+                </button>
+                <p class="auth-switch-text">Đã có tài khoản? <a href="#" id="switch-to-login">Đăng nhập</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN DASHBOARD SCREEN (Hidden until logged in) -->
+    <div id="dashboard-screen" class="dashboard-container hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-bolt-lightning brand-icon"></i>
+                <div class="brand-info">
+                    <span class="brand-title">AutoFillForm</span>
+                    <span class="brand-tagline">Smart filling, smart surveys!</span>
                 </div>
             </div>
-        </header>
 
-        <!-- Main Body Grid -->
-        <main class="app-main">
-            <!-- Step 1: Input URL -->
-            <section class="card input-section">
-                <div class="card-header">
-                    <h2><span class="step-badge">1</span> Nhập Đường Dẫn Biểu Mẫu</h2>
-                </div>
-                <div class="card-body">
-                    <p class="description">
-                        Dán đường dẫn công khai (dạng <code>/viewform</code> hoặc <code>/formResponse</code>) của Google Biểu Mẫu. Đảm bảo form ở chế độ công khai và không giới hạn 1 câu trả lời.
-                    </p>
-                    <div class="input-group">
-                        <input type="text" id="form-url" placeholder="https://docs.google.com/forms/d/e/.../viewform" />
-                        <button id="btn-parse" class="btn btn-primary">
-                            <span id="btn-parse-text"><i class="fa-solid fa-magnifying-glass"></i> Phân Tích Form</span>
-                            <span id="btn-parse-spinner" class="spinner hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
-                        </button>
-                    </div>
-                    <div id="parse-error" class="alert alert-danger hidden"></div>
-                </div>
-            </section>
+            <nav class="sidebar-menu">
+                <div class="menu-category">BẢNG ĐIỀU KHIỂN</div>
+                <a href="#" class="menu-item active" data-panel="panel-home">
+                    <i class="fa-solid fa-house"></i> Trang chủ
+                </a>
 
-            <!-- Campaign Settings & Form Config (Hidden until parsed) -->
-            <div id="campaign-workspace" class="hidden">
-                <div class="workspace-grid">
-                    <!-- Config Column -->
-                    <div class="config-column">
-                        <!-- Campaign Parameters -->
-                        <section class="card settings-card">
-                            <div class="card-header">
-                                <h2><span class="step-badge">2</span> Thiết Lập Chiến Dịch</h2>
-                            </div>
-                            <div class="card-body">
-                                <div class="settings-row">
-                                    <div class="form-group">
-                                        <label for="submit-count">Số lượt điền biểu mẫu:</label>
-                                        <input type="number" id="submit-count" value="10" min="1" max="5000" />
-                                        <span class="input-hint">Ví dụ: 450 lượt</span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="submit-delay">Khoảng trễ giữa các lượt (giây):</label>
-                                        <input type="number" id="submit-delay" value="1.0" min="0.1" step="0.1" max="60.0" />
-                                        <span class="input-hint">Tránh Google chặn spam</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-info-summary">
-                                    <div class="form-info-title"><i class="fa-solid fa-file-signature"></i> <span id="form-title-display">...</span></div>
-                                    <p id="form-desc-display" class="form-info-desc">...</p>
-                                </div>
-                            </div>
-                        </section>
+                <div class="menu-category">QUẢN LÍ</div>
+                <a href="#" class="menu-item" data-panel="panel-manage-form">
+                    <i class="fa-solid fa-folder-tree"></i> Quản lí Form
+                </a>
+                <a href="#" class="menu-item" data-panel="panel-active-form-view">
+                    <i class="fa-solid fa-sliders"></i> Cấu hình chiến dịch
+                </a>
+                <a href="#" class="menu-item disabled-menu">
+                    <i class="fa-solid fa-cart-shopping"></i> Các đơn hàng
+                </a>
+                <a href="#" class="menu-item disabled-menu">
+                    <i class="fa-solid fa-chart-pie"></i> Nghiên cứu SPSS <span class="badge badge-purple">BETA</span>
+                </a>
 
-                        <!-- Form Schema Configuration -->
-                        <section class="card schema-card">
-                            <div class="card-header flex-header">
-                                <h2><span class="step-badge">3</span> Cấu Hình Đáp Án Tự Động</h2>
-                                <div style="display: flex; gap: 8px;">
-                                    <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm" title="Nhập danh sách tỷ lệ % từ văn bản">
-                                        <i class="fa-solid fa-file-import"></i> Nhập nhanh % từ văn bản
-                                    </button>
-                                    <button id="btn-auto-fill-percent" class="btn btn-secondary btn-sm" title="Chia đều % các đáp án trắc nghiệm">
-                                        <i class="fa-solid fa-divide"></i> Chia Đều %
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div id="form-questions-container">
-                                    <!-- Dynamic Questions Will Be Rendered Here -->
-                                </div>
-                            </div>
-                        </section>
-                    </div>
+                <div class="menu-category">THANH TOÁN</div>
+                <a href="#" class="menu-item disabled-menu">
+                    <i class="fa-solid fa-credit-card"></i> Mua Credit
+                </a>
+                <a href="#" class="menu-item disabled-menu">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Quản Lý Hóa Đơn
+                </a>
 
-                    <!-- Runner / Logs Column -->
-                    <div class="runner-column">
-                        <!-- Run Panel -->
-                        <section class="card runner-card">
-                            <div class="card-header">
-                                <h2><span class="step-badge">4</span> Trạng Thái Điền Biểu Mẫu</h2>
-                            </div>
-                            <div class="card-body">
-                                <div class="stats-grid">
-                                    <div class="stat-box">
-                                        <div class="stat-value" id="stat-success">0</div>
-                                        <div class="stat-label">Thành Công</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-value" id="stat-failed">0</div>
-                                        <div class="stat-label">Thất Bại</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-value" id="stat-progress">0/0</div>
-                                        <div class="stat-label">Tiến Độ</div>
-                                    </div>
-                                </div>
+                <div class="menu-category">HỖ TRỢ</div>
+                <a href="#" class="menu-item disabled-menu">
+                    <i class="fa-solid fa-users"></i> Affiliate
+                </a>
+            </nav>
 
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar-bg">
-                                        <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
-                                    </div>
-                                    <div class="progress-percentage" id="progress-percent-label">0%</div>
-                                </div>
-
-                                <div class="action-buttons">
-                                    <button id="btn-start" class="btn btn-success btn-lg btn-block">
-                                        <i class="fa-solid fa-play"></i> Bắt Đầu Chạy
-                                    </button>
-                                    <button id="btn-stop" class="btn btn-danger btn-lg btn-block hidden">
-                                        <i class="fa-solid fa-square-check"></i> Đang Dừng...
-                                    </button>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- Log Terminal -->
-                        <section class="card terminal-card">
-                            <div class="card-header flex-header">
-                                <h2>Nhật Ký Chạy</h2>
-                                <button id="btn-clear-logs" class="btn btn-secondary btn-xs"><i class="fa-solid fa-trash-can"></i> Xóa</button>
-                            </div>
-                            <div class="terminal-body" id="logs-container">
-                                <div class="log-line system-log">Nhấn "Phân Tích Form" ở Bước 1 để bắt đầu...</div>
-                            </div>
-                        </section>
-                    </div>
-                </div>
+            <div class="sidebar-footer">
+                <button id="btn-logout" class="btn btn-secondary btn-block btn-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                </button>
             </div>
-        </main>
+        </aside>
 
-        <footer class="app-footer">
-            <p>Phát triển chuyên nghiệp cho nhu cầu giả lập dữ liệu Google Forms sạch. Vui lòng sử dụng đúng mục đích.</p>
-        </footer>
+        <!-- Main Body Wrapper -->
+        <div class="main-content">
+            <!-- Top Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <button id="sidebar-toggle" class="btn btn-secondary btn-xs"><i class="fa-solid fa-bars"></i></button>
+                    <div class="greeting-box">
+                        <h3>Xin chào, <span id="user-display-name">Khách</span> 👋</h3>
+                        <p>Chúc bạn một ngày làm việc hiệu quả!</p>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="credit-badge">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>0 Credit</span>
+                    </div>
+                    <div class="header-icon-btn">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="dot"></span>
+                    </div>
+                    <div class="user-profile">
+                        <div class="avatar">LM</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content Panels -->
+            <div class="panel-container">
+                
+                <!-- PANEL 1: HOME PANEL -->
+                <div id="panel-home" class="content-panel active">
+                    <div class="panel-header-section">
+                        <h2>Bảng Điều Khiển</h2>
+                        <p>Nhập liên kết biểu mẫu Google để bắt đầu tạo chiến dịch điền giả lập.</p>
+                    </div>
+
+                    <div class="dashboard-row">
+                        <!-- Left Action: Input URL -->
+                        <div class="card flex-1">
+                            <div class="card-header">
+                                <h2><span class="step-badge">1</span> Nhập Đường Dẫn Biểu Mẫu</h2>
+                            </div>
+                            <div class="card-body">
+                                <p class="description">
+                                    Dán đường dẫn công khai (dạng <code>/viewform</code> hoặc <code>/edit</code>) của Google Biểu Mẫu. Hệ thống sẽ tự động bóc tách và phân tích các trường dữ liệu.
+                                </p>
+                                <div class="input-group">
+                                    <input type="text" id="form-url" placeholder="https://docs.google.com/forms/d/.../viewform">
+                                    <button id="btn-parse" class="btn btn-primary" style="white-space: nowrap;">
+                                        <span id="btn-parse-text"><i class="fa-solid fa-magnifying-glass"></i> Phân Tích Form</span>
+                                        <span id="btn-parse-spinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang đọc...</span>
+                                    </button>
+                                </div>
+                                <div id="parse-error" class="error-msg hidden"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right Info Card -->
+                        <div class="card" style="width: 350px;">
+                            <div class="card-header">
+                                <h2><i class="fa-solid fa-circle-info"></i> Lưu Ý Quan Trọng</h2>
+                            </div>
+                            <div class="card-body">
+                                <ul class="info-list" style="font-size: 13px; padding-left: 16px; display: flex; flex-direction: column; gap: 10px;">
+                                    <li>Đảm bảo biểu mẫu đang ở chế độ công khai.</li>
+                                    <li>Nên <strong>tắt chế độ bắt buộc đăng nhập</strong> (Thu thập email / Trả lời 1 lần) để tool chạy tối ưu.</li>
+                                    <li>Có thể sử dụng link chỉnh sửa (edit URL) hoặc xem công khai (viewform URL).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL 2: MANAGE FORM -->
+                <div id="panel-manage-form" class="content-panel">
+                    <div class="panel-header-section flex-header">
+                        <div>
+                            <h2>Quản Lí Form</h2>
+                            <p>Danh sách các biểu mẫu đã từng phân tích trên hệ thống của bạn.</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="btn-nav-to-home"><i class="fa-solid fa-plus"></i> Thêm biểu mẫu</button>
+                    </div>
+
+                    <!-- Info Alert -->
+                    <div class="alert-banner">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Vui lòng tắt tùy chọn <strong>câu hỏi bắt buộc</strong> để đảm bảo quá trình điền tự động không bị gián đoạn!!!!</span>
+                    </div>
+
+                    <!-- Search Bar Layout -->
+                    <div class="card search-card">
+                        <div class="card-body search-body" style="display: flex; gap: 16px; align-items: center; padding: 12px 20px;">
+                            <div style="flex: 1; position: relative;">
+                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 14px; color: var(--text-hint);"></i>
+                                <input type="text" placeholder="Lọc nhanh biểu mẫu hiện có..." style="padding-left: 40px; margin-bottom: 0;">
+                            </div>
+                            <input type="text" placeholder="Tìm kiếm trên server..." style="width: 250px; margin-bottom: 0;">
+                            <button class="btn btn-primary"><i class="fa-solid fa-search"></i> Tìm kiếm</button>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state-card" id="empty-manage-state">
+                        <i class="fa-solid fa-folder-open empty-icon"></i>
+                        <h4>Chưa có biểu mẫu nào</h4>
+                        <p>Bạn chưa nhập biểu mẫu nào hoặc bộ lọc không khớp. Hãy quay lại Trang chủ để nhập form mới!</p>
+                    </div>
+                </div>
+
+                <!-- PANEL 3: ACTIVE FORM CAMPAIGN CONFIGURATION -->
+                <div id="panel-active-form-view" class="content-panel">
+                    <div id="campaign-workspace" class="hidden">
+                        <!-- Active Form Details Header Banner -->
+                        <div class="active-form-banner">
+                            <div class="banner-title-area">
+                                <i class="fa-solid fa-file-invoice banner-icon"></i>
+                                <div>
+                                    <h2 id="form-title-display">Tiêu đề biểu mẫu</h2>
+                                    <p id="form-desc-display">Mô tả biểu mẫu</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2-Column Campaign Workspace -->
+                        <div class="campaign-grid">
+                            <!-- Left: Configurations and Questions -->
+                            <div class="campaign-left-col">
+                                <!-- Campaign Stats & Trigger -->
+                                <section class="card">
+                                    <div class="card-header">
+                                        <h2><span class="step-badge">2</span> Thiết Lập Chiến Dịch</h2>
+                                    </div>
+                                    <div class="card-body campaign-settings-grid">
+                                        <div class="form-group">
+                                            <label>Số lượt điền biểu mẫu:</label>
+                                            <input type="number" id="campaign-submissions" value="10" min="1">
+                                            <span class="input-hint">Ví dụ: 450 lượt</span>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Khoảng trễ giữa các lượt (giây):</label>
+                                            <input type="number" id="campaign-delay" value="1.0" min="0.1" step="0.1">
+                                            <span class="input-hint">Tránh Google chặn spam</span>
+                                        </div>
+                                        
+                                        <!-- Actions Container Inside Settings -->
+                                        <div class="campaign-run-controls">
+                                            <div class="stats-row">
+                                                <div class="mini-stat"><span id="run-success">0</span> Thành công</div>
+                                                <div class="mini-stat"><span id="run-failed">0</span> Thất bại</div>
+                                                <div class="mini-stat"><span id="run-progress">0/0</span> Tiến độ</div>
+                                            </div>
+                                            <div class="progress-bar-bg" style="margin: 10px 0;">
+                                                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+                                            </div>
+                                            
+                                            <div style="display: flex; gap: 12px; margin-top: 10px;">
+                                                <button id="btn-start" class="btn btn-success" style="flex: 1;">
+                                                    <i class="fa-solid fa-play"></i> Bắt Đầu Chạy
+                                                </button>
+                                                <button id="btn-stop" class="btn btn-danger hidden" style="flex: 1;">
+                                                    <i class="fa-solid fa-square-check"></i> Đang Dừng...
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Questions schema and percentage configurations -->
+                                <section class="card">
+                                    <div class="card-header flex-header">
+                                        <h2><span class="step-badge">3</span> Cấu Hình Đáp Án Tự Động</h2>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm" title="Nhập danh sách tỷ lệ % từ văn bản">
+                                                <i class="fa-solid fa-file-import"></i> Nhập nhanh % từ văn bản
+                                            </button>
+                                            <button id="btn-auto-fill-percent" class="btn btn-secondary btn-sm" title="Chia đều % các đáp án trắc nghiệm">
+                                                <i class="fa-solid fa-divide"></i> Chia Đều %
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="form-questions-container">
+                                            <!-- Questions dynamically loaded here -->
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <!-- Right: Questions checklist tracking status -->
+                            <div class="campaign-right-col">
+                                <section class="card question-checklist-card">
+                                    <div class="card-header">
+                                        <h2><i class="fa-solid fa-clipboard-list"></i> Danh Sách Câu Hỏi</h2>
+                                        <span class="subtitle" style="font-size: 11px; display: block; margin-top: 2px;">Theo dõi trạng thái hoàn thành</span>
+                                    </div>
+                                    <div class="card-body checklist-body" id="question-checklist-container">
+                                        <!-- Checklist items dynamically loaded here -->
+                                    </div>
+                                </section>
+
+                                <!-- Terminal Logs -->
+                                <section class="card terminal-card" style="margin-top: 0px;">
+                                    <div class="card-header flex-header">
+                                        <h2><i class="fa-solid fa-terminal"></i> Nhật Ký Chạy</h2>
+                                        <button id="btn-clear-logs" class="btn btn-secondary btn-xs"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                                    </div>
+                                    <div class="terminal-body" id="logs-container">
+                                        <div class="log-line system-log">Nhấn "Bắt Đầu Chạy" để khởi động chiến dịch...</div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No active form scanned fallback -->
+                    <div class="empty-state-card" id="empty-active-state">
+                        <i class="fa-solid fa-sliders empty-icon"></i>
+                        <h4>Chưa cấu hình chiến dịch nào</h4>
+                        <p>Vui lòng quay lại Trang chủ, nhập link Google Form để bắt đầu phân tích thiết lập.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <!-- Modal for importing text percentages -->
@@ -168,7 +350,7 @@
                 <button class="modal-close-btn" id="btn-close-modal">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="description" style="font-size:12px; margin-bottom:10px;">
+                <p class="description" style="font-size:12.5px; margin-bottom:12px;">
                     Dán nội dung báo cáo khảo sát có chứa tỷ lệ % của các câu hỏi vào ô dưới đây. Hệ thống sẽ tự động tìm kiếm câu hỏi tương ứng và tự động điền các ô phần trăm.
                 </p>
                 <textarea id="import-text-area" placeholder="Dán văn bản báo cáo hoặc kết quả khảo sát tại đây...&#10;&#10;Ví dụ:&#10;Bạn đang sống ở đâu?&#10;- Hà Nội: 70%&#10;- TP. Hồ Chí Minh: 20%&#10;- Khác: 10%"></textarea>
@@ -179,8 +361,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="/static/js/app.js"></script>
 </body>
 </html>
-
