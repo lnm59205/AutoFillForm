@@ -661,27 +661,26 @@ select:focus {
     border: 1px solid var(--border);
     border-top: 4px solid var(--primary);
     border-radius: var(--radius-md);
-    padding: 24px 30px;
+    padding: 28px 32px;
     margin-bottom: 24px;
-    text-align: center;
+    text-align: left;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 #form-title-display {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 800;
     color: var(--text-main);
-    margin-bottom: 12px;
-    letter-spacing: -0.3px;
-    line-height: 1.4;
+    margin-bottom: 16px;
+    letter-spacing: -0.4px;
+    line-height: 1.35;
 }
 
 #form-desc-display {
     font-size: 13.5px;
     color: var(--text-muted);
-    line-height: 1.6;
-    max-width: 850px;
-    margin: 0 auto;
+    line-height: 1.7;
+    white-space: pre-wrap;
 }
 
 /* Campaign Panel Layout (2 Columns) */
