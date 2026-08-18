@@ -321,9 +321,6 @@ const defaultPercentagesMap = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Check Auth State first
-    checkAuthState();
-
     // 1. AUTHENTICATION & LOGIN/REGISTER HANDLERS
     const loginScreen = document.getElementById('login-screen');
     const dashboardScreen = document.getElementById('dashboard-screen');
@@ -359,10 +356,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Vui lòng nhập tên đăng nhập.");
                 return;
             }
-            // Save mock user session
-            const user = { name: usernameInput };
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            checkAuthState();
+            
+            // Get saved users or use default
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            let user = users.find(u => u.username === usernameInput);
+            
+            // If they just use default "Le Ngoc Minh" or match a registered user
+            if (!user && usernameInput === "Le Ngoc Minh") {
+                user = { name: "Lê Ngọc Minh", username: "Le Ngoc Minh" };
+            }
+
+            if (user) {
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                checkAuthState();
+            } else {
+                alert("Tài khoản không tồn tại. Vui lòng bấm Đăng ký ngay để tạo tài khoản mới!");
+            }
         });
     }
 
@@ -370,12 +379,24 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRegister.addEventListener('click', () => {
             const nameInput = document.getElementById('register-name').value.trim();
             const usernameInput = document.getElementById('register-username').value.trim();
+            
             if (!nameInput || !usernameInput) {
                 alert("Vui lòng điền đầy đủ họ tên và tên đăng nhập.");
                 return;
             }
-            const user = { name: nameInput };
-            localStorage.setItem('currentUser', JSON.stringify(user));
+
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            if (users.some(u => u.username === usernameInput) || usernameInput === "Le Ngoc Minh") {
+                alert("Tên đăng nhập này đã tồn tại!");
+                return;
+            }
+
+            const newUser = { name: nameInput, username: usernameInput };
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('currentUser', JSON.stringify(newUser));
+            
+            alert("Đăng ký tài khoản thành công!");
             checkAuthState();
         });
     }
@@ -1433,4 +1454,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return questionData;
     }
+
+    // Initialize auth state at the end of DOMContentLoaded
+    checkAuthState();
 });
