@@ -694,7 +694,7 @@ select:focus {
 /* Campaign Panel Layout (2 Columns) */
 .campaign-grid {
     display: grid;
-    grid-template-columns: 1.3fr 1fr;
+    grid-template-columns: 1.75fr 1.05fr;
     gap: 24px;
     align-items: start;
 }

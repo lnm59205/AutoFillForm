@@ -241,52 +241,12 @@
 
                         <!-- 2-Column Campaign Workspace -->
                         <div class="campaign-grid">
-                            <!-- Left: Configurations and Questions -->
+                            <!-- Left: Configurations and Questions (The Centerpiece) -->
                             <div class="campaign-left-col">
-                                <!-- Campaign Stats & Trigger -->
-                                <section class="card">
-                                    <div class="card-header">
-                                        <h2><span class="step-badge">2</span> Thiết Lập Chiến Dịch</h2>
-                                    </div>
-                                    <div class="card-body campaign-settings-grid">
-                                        <div class="form-group">
-                                            <label>Số lượt điền biểu mẫu:</label>
-                                            <input type="number" id="campaign-submissions" value="10" min="1">
-                                            <span class="input-hint">Ví dụ: 450 lượt</span>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Khoảng trễ giữa các lượt (giây):</label>
-                                            <input type="number" id="campaign-delay" value="1.0" min="0.1" step="0.1">
-                                            <span class="input-hint">Tránh Google chặn spam</span>
-                                        </div>
-                                        
-                                        <!-- Actions Container Inside Settings -->
-                                        <div class="campaign-run-controls">
-                                            <div class="stats-row">
-                                                <div class="mini-stat"><span id="run-success">0</span> Thành công</div>
-                                                <div class="mini-stat"><span id="run-failed">0</span> Thất bại</div>
-                                                <div class="mini-stat"><span id="run-progress">0/0</span> Tiến độ</div>
-                                            </div>
-                                            <div class="progress-bar-bg" style="margin: 10px 0;">
-                                                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
-                                            </div>
-                                            
-                                            <div style="display: flex; gap: 12px; margin-top: 10px;">
-                                                <button id="btn-start" class="btn btn-success" style="flex: 1;">
-                                                    <i class="fa-solid fa-play"></i> Bắt Đầu Chạy
-                                                </button>
-                                                <button id="btn-stop" class="btn btn-danger hidden" style="flex: 1;">
-                                                    <i class="fa-solid fa-square-check"></i> Đang Dừng...
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-
                                 <!-- Questions schema and percentage configurations -->
                                 <section class="card">
                                     <div class="card-header flex-header">
-                                        <h2><span class="step-badge">3</span> Cấu Hình Đáp Án Tự Động</h2>
+                                        <h2><span class="step-badge">2</span> Cấu Hình Đáp Án Tự Động</h2>
                                         <div style="display: flex; gap: 8px;">
                                             <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm" title="Nhập danh sách tỷ lệ % từ văn bản">
                                                 <i class="fa-solid fa-file-import"></i> Nhập nhanh % từ văn bản
@@ -304,8 +264,48 @@
                                 </section>
                             </div>
 
-                            <!-- Right: Questions checklist tracking status -->
+                            <!-- Right: Settings, Questions checklist tracking, and Logs -->
                             <div class="campaign-right-col">
+                                <!-- Campaign Stats & Trigger -->
+                                <section class="card">
+                                    <div class="card-header">
+                                        <h2><span class="step-badge">3</span> Thiết Lập Chiến Dịch</h2>
+                                    </div>
+                                    <div class="card-body" style="padding: 18px 20px;">
+                                        <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label style="font-size:12.5px;">Số lượt điền:</label>
+                                                <input type="number" id="campaign-submissions" value="10" min="1">
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label style="font-size:12.5px;">Khoảng trễ (s):</label>
+                                                <input type="number" id="campaign-delay" value="1.0" min="0.1" step="0.1">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Actions Container Inside Settings -->
+                                        <div class="campaign-run-controls" style="margin-top: 0;">
+                                            <div class="stats-row">
+                                                <div class="mini-stat"><span id="run-success">0</span> Thành công</div>
+                                                <div class="mini-stat"><span id="run-failed">0</span> Thất bại</div>
+                                                <div class="mini-stat"><span id="run-progress">0/0</span> Tiến độ</div>
+                                            </div>
+                                            <div class="progress-bar-bg" style="margin: 10px 0;">
+                                                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+                                            </div>
+                                            
+                                            <div style="display: flex; gap: 12px; margin-top: 10px;">
+                                                <button id="btn-start" class="btn btn-success btn-block" style="flex: 1;">
+                                                    <i class="fa-solid fa-play"></i> Bắt Đầu Chạy
+                                                </button>
+                                                <button id="btn-stop" class="btn btn-danger btn-block hidden" style="flex: 1;">
+                                                    <i class="fa-solid fa-square-check"></i> Đang Dừng...
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
                                 <section class="card question-checklist-card">
                                     <div class="card-header">
                                         <h2><i class="fa-solid fa-clipboard-list"></i> Danh Sách Câu Hỏi</h2>
@@ -323,7 +323,7 @@
                                         <button id="btn-clear-logs" class="btn btn-secondary btn-xs"><i class="fa-solid fa-trash-can"></i> Xóa</button>
                                     </div>
                                     <div class="terminal-body" id="logs-container">
-                                        <div class="log-line system-log">Nhấn "Bắt Đầu Chạy" để khởi động chiến dịch...</div>
+                                        <div class="log-line system-log">Nhấn "Bắt Đầu Chạy" để khởi động...</div>
                                     </div>
                                 </section>
                             </div>
