@@ -753,33 +753,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (['Radio', 'Dropdown', 'Scale'].includes(elem.type)) {
                     let choicesHtml = '';
                     elem.choices.forEach(choice => {
-                        choicesHtml += createChoiceBox(choice, false);
+                        choicesHtml += createChoiceRow(choice, false, elem.type);
                     });
                     
                     if (elem.has_other) {
-                        choicesHtml += createChoiceBox('__other_option__', true);
+                        choicesHtml += createChoiceRow('__other_option__', true, elem.type);
                     }
 
                     innerHtml += `
-                        <div class="choices-grid">
+                        <div class="choices-list">
                             ${choicesHtml}
                         </div>
                     `;
                 } else if (elem.type === 'Checkboxes') {
                     let choicesHtml = '';
                     elem.choices.forEach(choice => {
-                        choicesHtml += createChoiceBox(choice, false);
+                        choicesHtml += createChoiceRow(choice, false, elem.type);
                     });
                     
                     if (elem.has_other) {
-                        choicesHtml += createChoiceBox('__other_option__', true);
+                        choicesHtml += createChoiceRow('__other_option__', true, elem.type);
                     }
 
                     innerHtml += `
-                        <div class="choices-grid">
+                        <div class="choices-list">
                             ${choicesHtml}
                         </div>
-                        <div style="font-size:11px; color: var(--text-hint); margin-top: 10px;">
+                        <div style="font-size:11.5px; color: var(--text-hint); margin-top: 10px;">
                             * Tỷ lệ mỗi hộp kiểm độc lập (0-100%), không yêu cầu tổng % bằng 100%.
                         </div>
                     `;
@@ -788,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     elem.rows.forEach(row => {
                         let colsHtml = '';
                         elem.choices.forEach(col => {
-                            colsHtml += createChoiceBox(col, false);
+                            colsHtml += createChoiceRow(col, false, elem.type);
                         });
                         
                         let isRadio = elem.type === 'RadioGrid';
@@ -806,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         gridHtml += `
                             <div class="grid-row-container" data-row-name="${row}" style="margin-bottom:14px;">
                                 <div class="grid-row-title"><i class="fa-solid fa-chevron-right" style="font-size:9px; color:var(--primary);"></i> Hàng: ${row}</div>
-                                <div class="choices-grid">
+                                <div class="choices-list">
                                     ${colsHtml}
                                 </div>
                                 ${sumLabelHtml}
@@ -831,14 +831,15 @@ document.addEventListener('DOMContentLoaded', () => {
         attachPercentInputEvents();
     }
 
-    function createChoiceBox(choiceVal, isOther) {
+    function createChoiceRow(choiceVal, isOther, type) {
         let labelText = isOther ? 'Đáp án khác (Tự động)' : choiceVal;
+        let iconClass = ['Checkboxes', 'CheckboxGrid'].includes(type) ? 'fa-regular fa-square' : 'fa-regular fa-circle-dot';
         return `
-            <div class="choice-box" data-choice-value="${choiceVal}">
-                <div class="choice-box-label" title="${labelText}">${labelText}</div>
-                <div class="choice-box-input-wrapper">
-                    <input type="number" class="choice-percent-input choice-box-input" value="0" min="0" max="100" />
-                    <span class="choice-box-suffix">%</span>
+            <div class="choice-row" data-choice-value="${choiceVal}">
+                <span class="choice-label" title="${labelText}"><i class="${iconClass}"></i> ${labelText}</span>
+                <div class="choice-input-wrapper">
+                    <input type="number" class="choice-percent-input" value="0" min="0" max="100" />
+                    <span class="percent-sign">%</span>
                 </div>
             </div>
         `;
@@ -1077,7 +1078,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
                 percentages[id] = {};
-                const choiceRows = qItem.querySelectorAll('.choice-box');
+                const choiceRows = qItem.querySelectorAll('.choice-row');
                 choiceRows.forEach(row => {
                     const val = row.dataset.choiceValue;
                     const pct = parseInt(row.querySelector('.choice-percent-input').value) || 0;
@@ -1089,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 rows.forEach(row => {
                     const rowName = row.dataset.rowName;
                     percentages[id][rowName] = {};
-                    const choiceRows = row.querySelectorAll('.choice-box');
+                    const choiceRows = row.querySelectorAll('.choice-row');
                     choiceRows.forEach(crow => {
                         const val = crow.dataset.choiceValue;
                         const pct = parseInt(crow.querySelector('.choice-percent-input').value) || 0;
@@ -1132,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (config.percentages[id]) {
                     if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                        const choiceRows = qItem.querySelectorAll('.choice-box');
+                        const choiceRows = qItem.querySelectorAll('.choice-row');
                         choiceRows.forEach(row => {
                             const val = row.dataset.choiceValue;
                             if (config.percentages[id][val] !== undefined) {
@@ -1144,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         rowContainers.forEach(container => {
                             const rowName = container.dataset.rowName;
                             if (config.percentages[id][rowName]) {
-                                const choiceRows = container.querySelectorAll('.choice-box');
+                                const choiceRows = container.querySelectorAll('.choice-row');
                                 choiceRows.forEach(row => {
                                     const val = row.dataset.choiceValue;
                                     if (config.percentages[id][rowName][val] !== undefined) {
@@ -1251,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const questionConfig = defaultPercentagesMap[matchedKey];
                 
                 if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                    const choiceRows = qItem.querySelectorAll('.choice-box');
+                    const choiceRows = qItem.querySelectorAll('.choice-row');
                     let filledCount = 0;
                     
                     choiceRows.forEach(row => {
@@ -1280,7 +1281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         if (matchedRowKey) {
                             const rowConfig = defaultPercentagesMap[matchedRowKey];
-                            const choiceRows = container.querySelectorAll('.choice-box');
+                            const choiceRows = container.querySelectorAll('.choice-row');
                             choiceRows.forEach(row => {
                                 const choiceVal = row.dataset.choiceValue;
                                 const matchedChoiceKey = Object.keys(rowConfig).find(k => fuzzyMatch(k, choiceVal));
@@ -1403,7 +1404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         static_value: staticVal
                     };
                 } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                    const choiceRows = qItem.querySelectorAll('.choice-box');
+                    const choiceRows = qItem.querySelectorAll('.choice-row');
                     const options = {};
                     choiceRows.forEach(row => {
                         const val = row.dataset.choiceValue;
@@ -1419,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const rowConfigs = {};
                     rows.forEach(row => {
                         const rowName = row.dataset.rowName;
-                        const choiceRows = row.querySelectorAll('.choice-box');
+                        const choiceRows = row.querySelectorAll('.choice-row');
                         const options = {};
                         choiceRows.forEach(crow => {
                             const val = crow.dataset.choiceValue;
@@ -1600,7 +1601,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (matchedQ) {
                     matchCount++;
                     if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                        const choiceRows = qItem.querySelectorAll('.choice-box');
+                        const choiceRows = qItem.querySelectorAll('.choice-row');
                         choiceRows.forEach(row => {
                             const choiceVal = row.dataset.choiceValue;
                             const matchedKey = Object.keys(matchedQ.choices).find(k => fuzzyMatch(k, choiceVal));
@@ -1615,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const rowName = container.dataset.rowName;
                             const matchedRowQ = parsedData.find(q => fuzzyMatch(q.title, rowName));
                             if (matchedRowQ) {
-                                const choiceRows = container.querySelectorAll('.choice-box');
+                                const choiceRows = container.querySelectorAll('.choice-row');
                                 choiceRows.forEach(row => {
                                     const choiceVal = row.dataset.choiceValue;
                                     const matchedKey = Object.keys(matchedRowQ.choices).find(k => fuzzyMatch(k, choiceVal));
