@@ -657,38 +657,31 @@ select:focus {
 
 /* 4. ACTIVE FORM CAMPAIGN WORKSPACE */
 .active-form-banner {
-    background: linear-gradient(135deg, hsl(225, 20%, 8%) 0%, hsl(225, 22%, 5%) 100%);
+    background: linear-gradient(180deg, hsl(225, 20%, 9%) 0%, hsl(225, 20%, 6%) 100%);
     border: 1px solid var(--border);
+    border-top: 4px solid var(--primary);
     border-radius: var(--radius-md);
-    padding: 20px 24px;
+    padding: 24px 30px;
     margin-bottom: 24px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
-.banner-title-area {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.banner-icon {
-    font-size: 24px;
-    color: var(--primary);
-    background-color: hsla(180, 100%, 45%, 0.08);
-    padding: 12px;
-    border-radius: var(--radius-sm);
-    border: 1px solid hsla(180, 100%, 45%, 0.15);
-}
-
-.banner-title-area h2 {
-    font-size: 16.5px;
+#form-title-display {
+    font-size: 20px;
     font-weight: 800;
     color: var(--text-main);
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+    line-height: 1.4;
 }
 
-.banner-title-area p {
-    font-size: 12.5px;
+#form-desc-display {
+    font-size: 13.5px;
     color: var(--text-muted);
-    margin-top: 2px;
+    line-height: 1.6;
+    max-width: 850px;
+    margin: 0 auto;
 }
 
 /* Campaign Panel Layout (2 Columns) */
