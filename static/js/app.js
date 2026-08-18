@@ -632,7 +632,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td style="padding: 16px 20px; font-weight: 700; color: var(--text-main); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${form.title}">${form.title}</td>
                     <td style="padding: 16px 20px; text-align: right;">
                         <button class="btn btn-primary btn-xs btn-open-saved" data-idx="${idx}">
-                            <i class="fa-solid fa-sliders"></i> Cấu hình chiến dịch
+                            <i class="fa-solid fa-sliders"></i> Cấu hình
+                        </button>
+                        <button class="btn btn-danger btn-xs btn-delete-saved" data-idx="${idx}" style="margin-left: 8px;">
+                            <i class="fa-solid fa-trash-can"></i> Xóa
                         </button>
                     </td>
                 </tr>
@@ -670,6 +673,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 document.querySelector('.menu-item[data-panel="panel-active-form-view"]').click();
+            });
+        });
+
+        // Attach clicks to Delete buttons
+        document.querySelectorAll('.btn-delete-saved').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(btn.dataset.idx);
+                const saved = JSON.parse(localStorage.getItem('saved_forms') || '[]');
+                
+                if (confirm(`Bạn có chắc chắn muốn xóa biểu mẫu "${saved[idx].title}" khỏi danh sách đã lưu?`)) {
+                    saved.splice(idx, 1);
+                    localStorage.setItem('saved_forms', JSON.stringify(saved));
+                    renderSavedFormsList(); // re-render list
+                }
             });
         });
     }
