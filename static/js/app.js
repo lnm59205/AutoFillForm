@@ -500,10 +500,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnParse) {
         btnParse.addEventListener('click', async () => {
-            const url = formUrlInput.value.trim();
+            let url = formUrlInput.value.trim();
             if (!url) {
-                showError("Vui lòng nhập đường dẫn biểu mẫu.");
+                showError("Vui lòng nhập đường dẫn biểu mẫu hoặc mã cấu hình.");
                 return;
+            }
+
+            let pendingConfig = null;
+            if (url.startsWith('CONFIG_')) {
+                try {
+                    const jsonStr = decodeURIComponent(escape(atob(url.replace('CONFIG_', ''))));
+                    pendingConfig = JSON.parse(jsonStr);
+                    url = pendingConfig.url;
+                } catch (err) {
+                    showError("Mã cấu hình không hợp lệ hoặc bị lỗi.");
+                    return;
+                }
             }
 
             btnParse.disabled = true;
@@ -542,9 +554,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Show campaign Workspace & Navigate to it
                 document.querySelector('.menu-item[data-panel="panel-active-form-view"]').click();
-                addLog("system", `Đã tải thành công biểu mẫu: "${data.title}"`);
                 
-                autoFillZeroPercentages();
+                if (pendingConfig) {
+                    applyConfigPayload(pendingConfig);
+                    addLog("system", `Đã tải và tự động cấu hình biểu mẫu từ mã: "${data.title}"`);
+                    alert("Tải cấu hình thành công!");
+                } else {
+                    autoFillZeroPercentages();
+                    addLog("system", `Đã tải thành công biểu mẫu: "${data.title}"`);
+                }
                 
             } catch (err) {
                 showError(err.message);
@@ -640,12 +658,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 formTitleDisplay.textContent = parsedForm.title;
                 formDescDisplay.textContent = parsedForm.description || "Không có mô tả.";
-                
                 renderQuestions(parsedForm);
                 renderQuestionChecklist(parsedForm);
                 
+                if (form.configPayload) {
+                    applyConfigPayload(form.configPayload);
+                    addLog("system", `Đã phục hồi cấu hình phần trăm đã lưu cho: "${parsedForm.title}"`);
+                } else {
+                    autoFillZeroPercentages();
+                    addLog("system", `Đã tải biểu mẫu lưu trữ (chưa có cấu hình %): "${parsedForm.title}"`);
+                }
+
                 document.querySelector('.menu-item[data-panel="panel-active-form-view"]').click();
-                addLog("system", `Đã tải cấu hình biểu mẫu lưu trữ: "${parsedForm.title}"`);
             });
         });
     }
@@ -1012,6 +1036,185 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         updateAllSums();
         addLog("system", "ℹ️ Đã tải biểu mẫu. Tất cả các đáp án được đặt mặc định là 0%.");
+    }
+
+    function getCurrentConfigPayload() {
+        if (!parsedForm) return null;
+        
+        const percentages = {};
+        const strategies = {};
+        const static_values = {};
+        const qItems = document.querySelectorAll('.question-item');
+        
+        qItems.forEach(qItem => {
+            const id = qItem.dataset.id;
+            const type = qItem.dataset.type;
+            
+            if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
+                const select = qItem.querySelector('.strategy-select');
+                strategies[id] = select ? select.value : 'default';
+                const staticInput = qItem.querySelector('.static-value-input');
+                if (staticInput) {
+                    static_values[id] = staticInput.value;
+                }
+            } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
+                percentages[id] = {};
+                const choiceRows = qItem.querySelectorAll('.choice-box');
+                choiceRows.forEach(row => {
+                    const val = row.dataset.choiceValue;
+                    const pct = parseInt(row.querySelector('.choice-percent-input').value) || 0;
+                    percentages[id][val] = pct;
+                });
+            } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
+                percentages[id] = {};
+                const rows = qItem.querySelectorAll('.grid-row-container');
+                rows.forEach(row => {
+                    const rowName = row.dataset.rowName;
+                    percentages[id][rowName] = {};
+                    const choiceRows = row.querySelectorAll('.choice-box');
+                    choiceRows.forEach(crow => {
+                        const val = crow.dataset.choiceValue;
+                        const pct = parseInt(crow.querySelector('.choice-percent-input').value) || 0;
+                        percentages[id][rowName][val] = pct;
+                    });
+                });
+            }
+        });
+        
+        const submissions = parseInt(document.getElementById('campaign-submissions').value) || 10;
+        const delay = parseFloat(document.getElementById('campaign-delay').value) || 1.0;
+        
+        return {
+            url: formUrlInput.value.trim().startsWith('CONFIG_') ? parsedForm.url : formUrlInput.value.trim(),
+            title: parsedForm.title,
+            description: parsedForm.description,
+            submissions: submissions,
+            delay: delay,
+            percentages: percentages,
+            strategies: strategies,
+            static_values: static_values
+        };
+    }
+
+    function applyConfigPayload(config) {
+        if (!parsedForm) return;
+
+        if (config.submissions) {
+            document.getElementById('campaign-submissions').value = config.submissions;
+        }
+        if (config.delay) {
+            document.getElementById('campaign-delay').value = config.delay;
+        }
+
+        if (config.percentages) {
+            const qItems = document.querySelectorAll('.question-item');
+            qItems.forEach(qItem => {
+                const id = qItem.dataset.id;
+                const type = qItem.dataset.type;
+                
+                if (config.percentages[id]) {
+                    if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
+                        const choiceRows = qItem.querySelectorAll('.choice-box');
+                        choiceRows.forEach(row => {
+                            const val = row.dataset.choiceValue;
+                            if (config.percentages[id][val] !== undefined) {
+                                row.querySelector('.choice-percent-input').value = config.percentages[id][val];
+                            }
+                        });
+                    } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
+                        const rowContainers = qItem.querySelectorAll('.grid-row-container');
+                        rowContainers.forEach(container => {
+                            const rowName = container.dataset.rowName;
+                            if (config.percentages[id][rowName]) {
+                                const choiceRows = container.querySelectorAll('.choice-box');
+                                choiceRows.forEach(row => {
+                                    const val = row.dataset.choiceValue;
+                                    if (config.percentages[id][rowName][val] !== undefined) {
+                                        row.querySelector('.choice-percent-input').value = config.percentages[id][rowName][val];
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        if (config.strategies) {
+            const qItems = document.querySelectorAll('.question-item');
+            qItems.forEach(qItem => {
+                const id = qItem.dataset.id;
+                const type = qItem.dataset.type;
+                if (['Short', 'Paragraph', 'UserEmail'].includes(type) && config.strategies[id]) {
+                    const select = qItem.querySelector('.strategy-select');
+                    if (select) {
+                        select.value = config.strategies[id];
+                        handleStrategyChange(select);
+                    }
+                    if (config.strategies[id] === 'static' && config.static_values && config.static_values[id]) {
+                        const staticInput = qItem.querySelector('.static-value-input');
+                        if (staticInput) staticInput.value = config.static_values[id];
+                    }
+                }
+            });
+        }
+
+        updateAllSums();
+    }
+
+    // Bind configuration Save & Export buttons
+    const btnSaveConfig = document.getElementById('btn-save-config');
+    if (btnSaveConfig) {
+        btnSaveConfig.addEventListener('click', () => {
+            if (!parsedForm) return;
+            const payload = getCurrentConfigPayload();
+            if (!payload) return;
+            
+            let saved = JSON.parse(localStorage.getItem('saved_forms') || '[]');
+            const idx = saved.findIndex(f => f.url === payload.url);
+            if (idx !== -1) {
+                saved[idx].title = payload.title;
+                saved[idx].description = payload.description;
+                saved[idx].configPayload = payload;
+                localStorage.setItem('saved_forms', JSON.stringify(saved));
+            } else {
+                saved.push({
+                    url: payload.url,
+                    title: payload.title,
+                    description: payload.description,
+                    data: parsedForm,
+                    configPayload: payload
+                });
+                localStorage.setItem('saved_forms', JSON.stringify(saved));
+            }
+            
+            addLog("system", "💾 Đã lưu cấu hình phần trăm hiện tại vào trình duyệt.");
+            alert("Lưu cấu hình thành công!");
+        });
+    }
+
+    const btnExportConfig = document.getElementById('btn-export-config');
+    if (btnExportConfig) {
+        btnExportConfig.addEventListener('click', () => {
+            if (!parsedForm) return;
+            const payload = getCurrentConfigPayload();
+            if (!payload) return;
+            
+            try {
+                const jsonStr = JSON.stringify(payload);
+                const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
+                const configCode = "CONFIG_" + base64Str;
+                
+                navigator.clipboard.writeText(configCode).then(() => {
+                    addLog("system", "📋 Đã sao chép mã cấu hình chia sẻ vào bộ nhớ tạm.");
+                    alert("Đã sao chép Mã cấu hình vào bộ nhớ tạm! Bạn có thể lưu mã này vào Notepad để dùng lại bất cứ lúc nào.");
+                }).catch(err => {
+                    alert("Không thể sao chép tự động. Hãy sao chép mã này:\n\n" + configCode);
+                });
+            } catch (err) {
+                alert("Lỗi xuất cấu hình: " + err.message);
+            }
+        });
     }
 
     function autoFillDefaultPercentages() {

@@ -156,14 +156,14 @@
                         <!-- Left Action: Input URL -->
                         <div class="card flex-1">
                             <div class="card-header">
-                                <h2><span class="step-badge">1</span> Nhập Đường Dẫn Biểu Mẫu</h2>
+                                <h2><span class="step-badge">1</span> Nhập Đường Dẫn Hoặc Mã Cấu Hình</h2>
                             </div>
                             <div class="card-body">
                                 <p class="description">
-                                    Dán đường dẫn công khai (dạng <code>/viewform</code> hoặc <code>/edit</code>) của Google Biểu Mẫu. Hệ thống sẽ tự động bóc tách và phân tích các trường dữ liệu.
+                                    Dán đường dẫn biểu mẫu Google (dạng <code>/viewform</code> hoặc <code>/edit</code>) HOẶC dán <strong>Mã cấu hình đã lưu (CONFIG_...)</strong> để tự động tải lại % đã chia.
                                 </p>
                                 <div class="input-group">
-                                    <input type="text" id="form-url" placeholder="https://docs.google.com/forms/d/.../viewform">
+                                    <input type="text" id="form-url" placeholder="Dán link Google Form hoặc Mã cấu hình CONFIG_...">
                                     <button id="btn-parse" class="btn btn-primary" style="white-space: nowrap;">
                                         <span id="btn-parse-text"><i class="fa-solid fa-magnifying-glass"></i> Phân Tích Form</span>
                                         <span id="btn-parse-spinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang đọc...</span>
@@ -245,9 +245,15 @@
                             <div class="campaign-left-col">
                                 <!-- Questions schema and percentage configurations -->
                                 <section class="card">
-                                    <div class="card-header flex-header">
+                                    <div class="card-header flex-header" style="flex-wrap: wrap; gap: 10px;">
                                         <h2><span class="step-badge">2</span> Cấu Hình Đáp Án Tự Động</h2>
-                                        <div style="display: flex; gap: 8px;">
+                                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                            <button id="btn-save-config" class="btn btn-success btn-sm" title="Lưu cấu hình tỷ lệ % hiện tại vào trình duyệt">
+                                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình
+                                            </button>
+                                            <button id="btn-export-config" class="btn btn-primary btn-sm" title="Xuất mã cấu hình để chia sẻ/lưu trữ">
+                                                <i class="fa-solid fa-share-nodes"></i> Xuất Mã Share
+                                            </button>
                                             <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm" title="Nhập danh sách tỷ lệ % từ văn bản">
                                                 <i class="fa-solid fa-file-import"></i> Nhập nhanh % từ văn bản
                                             </button>
