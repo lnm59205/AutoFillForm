@@ -536,6 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 parsedForm = data;
+                parsedForm.url = url;
 
                 // Persist form to localStorage database
                 saveFormToLocalStorage(url, data);
@@ -658,6 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const idx = parseInt(btn.dataset.idx);
                 const form = saved[idx];
                 parsedForm = form.data;
+                parsedForm.url = form.url;
 
                 formTitleDisplay.textContent = parsedForm.title;
                 formDescDisplay.textContent = parsedForm.description || "Không có mô tả.";
@@ -1445,10 +1447,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        url: parsedForm.url,
+                        fields: config,
+                        count: submissions,
+                        delay: delay,
                         form_data: parsedForm,
                         config: config,
-                        total_submissions: submissions,
-                        delay: delay
+                        total_submissions: submissions
                     })
                 });
                 

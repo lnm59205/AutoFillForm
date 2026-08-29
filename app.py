@@ -377,12 +377,25 @@ def start_campaign():
     if runner_state.active:
         return jsonify({"error": "Đang có một chiến dịch điền form đang chạy"}), 400
         
-    data = request.json
-    url = clean_google_form_url(data.get('url'))
-    count = int(data.get('count', 10))
-    delay = float(data.get('delay', 1.0))
-    fields_config = data.get('fields', {})
+    data = request.json or {}
     
+    # Tolerant parameter loading
+    url_val = data.get('url')
+    if not url_val and 'form_data' in data and isinstance(data['form_data'], dict):
+        url_val = data['form_data'].get('url')
+    url = clean_google_form_url(url_val)
+    
+    count_val = data.get('count')
+    if count_val is None:
+        count_val = data.get('total_submissions', 10)
+    count = int(count_val)
+    
+    delay = float(data.get('delay', 1.0))
+    
+    fields_config = data.get('fields')
+    if not fields_config:
+        fields_config = data.get('config', {})
+        
     if not url:
         return jsonify({"error": "Đường dẫn biểu mẫu trống"}), 400
         
