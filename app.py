@@ -603,12 +603,13 @@ def submission_worker(url, count, delay, fields_config, strict_mode=False):
         runner_state.active = False
         return
 
-    for idx in range(count):
+    successful_runs = 0
+    while successful_runs < count:
         if runner_state.stop_requested:
             runner_state.add_log("⏹️ Đã dừng tiến trình điền biểu mẫu theo yêu cầu.")
             break
             
-        runner_state.current = idx + 1
+        runner_state.current = successful_runs + 1
         
         try:
             form.reset()
@@ -622,7 +623,7 @@ def submission_worker(url, count, delay, fields_config, strict_mode=False):
                         
                     elem_id = elem.id
                     if strict_mode and elem_id in pregenerated and pregenerated[elem_id] is not None:
-                        answers[elem_id] = pregenerated[elem_id][idx]
+                        answers[elem_id] = pregenerated[elem_id][successful_runs]
                     else:
                         config_field = fields_config.get(str(elem_id), {})
                         answers[elem_id] = generate_value_for_element(elem, config_field)
@@ -637,7 +638,8 @@ def submission_worker(url, count, delay, fields_config, strict_mode=False):
             form.fill(fill_callback)
             form.submit()
             
-            runner_state.success += 1
+            successful_runs += 1
+            runner_state.success = successful_runs
             
             # Generate sample values for logging
             sample_answers = []
@@ -648,18 +650,20 @@ def submission_worker(url, count, delay, fields_config, strict_mode=False):
                         val_str = str(val)[:30] + '...' if len(str(val)) > 30 else str(val)
                         sample_answers.append(f"{elem.name or 'Câu hỏi'}: {val_str}")
             
-            runner_state.add_log(f"✅ Lượt #{idx + 1} thành công. Dữ liệu: {', '.join(sample_answers[:2])}")
+            runner_state.add_log(f"✅ Lượt #{successful_runs} thành công. Dữ liệu: {', '.join(sample_answers[:2])}")
             
+            # Delay between runs
+            if successful_runs < count:
+                time.sleep(delay)
+                
         except Exception as e:
             runner_state.failed += 1
-            runner_state.add_log(f"❌ Lượt #{idx + 1} thất bại: {str(e)}")
-            
-        # Delay between runs
-        if idx < count - 1:
-            time.sleep(delay)
+            runner_state.add_log(f"❌ Phát hiện lỗi ở lượt #{successful_runs + 1} (Đang tự động thử lại...): {str(e)}")
+            # Slight delay before retry to avoid rate limits
+            time.sleep(max(1.0, delay))
 
     runner_state.active = False
-    runner_state.add_log(f"🎉 Chiến dịch kết thúc! Tổng thành công: {runner_state.success}/{count}, Thất bại: {runner_state.failed}")
+    runner_state.add_log(f"🎉 Chiến dịch kết thúc! Tổng thành công: {runner_state.success}/{count}, Tổng số lỗi đã bỏ qua: {runner_state.failed}")
 
 @app.route('/')
 def index():
