@@ -94,6 +94,18 @@ def generate_vi_phone():
     suffix = ''.join(random.choices('0123456789', k=7))
     return f"{prefix}{suffix}"
 
+def backend_fuzzy_match(s1, s2):
+    if not s1 or not s2:
+        return False
+    import unicodedata
+    def clean(s):
+        s = str(s)
+        s = unicodedata.normalize('NFC', s)
+        s = s.lower().strip()
+        s = re.sub(r'\s+', ' ', s)
+        return s
+    return clean(s1) == clean(s2)
+
 def generate_value_for_element(elem, config_field):
     elem_class = elem.__class__.__name__
     strategy = config_field.get('strategy', 'default')
@@ -131,8 +143,31 @@ def generate_value_for_element(elem, config_field):
         if not choices_cfg:
             choices_cfg = config_field.get('options', {})
         
-        # Filter choices configured with positive percentages
-        active_choices = {k: float(v) for k, v in choices_cfg.items() if float(v) > 0}
+        # Match each choice to choices_cfg using fuzzy matching
+        active_choices = {}
+        if hasattr(elem, 'options') and elem.options:
+            for opt in elem.options:
+                matched_key = None
+                for cfg_key in choices_cfg.keys():
+                    if backend_fuzzy_match(cfg_key, opt.value):
+                        matched_key = cfg_key
+                        break
+                if matched_key is not None:
+                    weight = float(choices_cfg[matched_key])
+                    if weight > 0:
+                        active_choices[opt.value] = weight
+            
+            # Match other option
+            if elem.other_option is not None:
+                matched_key = None
+                for cfg_key in choices_cfg.keys():
+                    if cfg_key == '__other_option__' or backend_fuzzy_match(cfg_key, 'khác') or backend_fuzzy_match(cfg_key, 'đáp án khác (tự động)'):
+                        matched_key = cfg_key
+                        break
+                if matched_key is not None:
+                    weight = float(choices_cfg[matched_key])
+                    if weight > 0:
+                        active_choices['__other_option__'] = weight
         
         # If no weights configured, fallback to uniform random choice
         if not active_choices:
@@ -156,7 +191,31 @@ def generate_value_for_element(elem, config_field):
         choices_cfg = config_field.get('choices')
         if not choices_cfg:
             choices_cfg = config_field.get('options', {})
-        active_choices = {k: float(v) for k, v in choices_cfg.items() if float(v) > 0}
+            
+        active_choices = {}
+        if hasattr(elem, 'options') and elem.options:
+            for opt in elem.options:
+                matched_key = None
+                for cfg_key in choices_cfg.keys():
+                    if backend_fuzzy_match(cfg_key, opt.value):
+                        matched_key = cfg_key
+                        break
+                if matched_key is not None:
+                    weight = float(choices_cfg[matched_key])
+                    if weight > 0:
+                        active_choices[opt.value] = weight
+            
+            # Match other option
+            if elem.other_option is not None:
+                matched_key = None
+                for cfg_key in choices_cfg.keys():
+                    if cfg_key == '__other_option__' or backend_fuzzy_match(cfg_key, 'khác') or backend_fuzzy_match(cfg_key, 'đáp án khác (tự động)'):
+                        matched_key = cfg_key
+                        break
+                if matched_key is not None:
+                    weight = float(choices_cfg[matched_key])
+                    if weight > 0:
+                        active_choices['__other_option__'] = weight
         
         if not active_choices:
             if hasattr(elem, 'options') and elem.options:
@@ -190,7 +249,14 @@ def generate_value_for_element(elem, config_field):
         selected_grid = []
         
         for row in elem.rows:
-            row_cfg = rows_cfg.get(row, {})
+            # Find matching row in rows_cfg using fuzzy match
+            matched_row_key = None
+            for r_key in rows_cfg.keys():
+                if backend_fuzzy_match(r_key, row):
+                    matched_row_key = r_key
+                    break
+            
+            row_cfg = rows_cfg.get(matched_row_key, {}) if matched_row_key else {}
             choices_cfg = None
             if isinstance(row_cfg, dict):
                 choices_cfg = row_cfg.get('choices')
@@ -201,7 +267,18 @@ def generate_value_for_element(elem, config_field):
             else:
                 choices_cfg = {}
                 
-            active_choices = {k: float(v) for k, v in choices_cfg.items() if float(v) > 0} if choices_cfg else {}
+            active_choices = {}
+            if choices_cfg and hasattr(elem, 'cols') and elem.cols:
+                for col in elem.cols:
+                    matched_col_key = None
+                    for c_key in choices_cfg.keys():
+                        if backend_fuzzy_match(c_key, col.value):
+                            matched_col_key = c_key
+                            break
+                    if matched_col_key is not None:
+                        weight = float(choices_cfg[matched_col_key])
+                        if weight > 0:
+                            active_choices[col.value] = weight
             
             if elem_class == 'RadioGrid':
                 if not active_choices:
