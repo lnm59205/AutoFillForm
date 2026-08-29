@@ -322,7 +322,255 @@ def generate_value_for_element(elem, config_field):
 
     return gforms.elements.Value.EMPTY
 
-def submission_worker(url, count, delay, fields_config):
+def pregenerate_campaign_answers(form, fields_config, count):
+    pregenerated = {}
+    
+    for page in form.pages:
+        for elem in page.elements:
+            if not isinstance(elem, gforms.elements.InputElement):
+                continue
+                
+            elem_id = str(elem.id)
+            elem_class = elem.__class__.__name__
+            config_field = fields_config.get(elem_id, {})
+            
+            # 1. Radio / Dropdown / Scale
+            if elem_class in ['Radio', 'Dropdown', 'Scale']:
+                choices_cfg = config_field.get('choices')
+                if not choices_cfg:
+                    choices_cfg = config_field.get('options', {})
+                
+                active_choices = {}
+                if hasattr(elem, 'options') and elem.options:
+                    for opt in elem.options:
+                        matched_key = None
+                        for cfg_key in choices_cfg.keys():
+                            if backend_fuzzy_match(cfg_key, opt.value):
+                                matched_key = cfg_key
+                                break
+                        if matched_key is not None:
+                            weight = float(choices_cfg[matched_key])
+                            if weight > 0:
+                                active_choices[opt.value] = weight
+                    
+                    if elem.other_option is not None:
+                        matched_key = None
+                        for cfg_key in choices_cfg.keys():
+                            if cfg_key == '__other_option__' or backend_fuzzy_match(cfg_key, 'khác') or backend_fuzzy_match(cfg_key, 'đáp án khác (tự động)'):
+                                matched_key = cfg_key
+                                break
+                        if matched_key is not None:
+                            weight = float(choices_cfg[matched_key])
+                            if weight > 0:
+                                active_choices['__other_option__'] = weight
+                
+                if not active_choices:
+                    values = []
+                    for _ in range(count):
+                        if hasattr(elem, 'options') and elem.options:
+                            values.append(random.choice(elem.options).value)
+                        else:
+                            values.append(gforms.elements.Value.EMPTY)
+                    pregenerated[elem.id] = values
+                    continue
+                
+                total_weight = sum(active_choices.values())
+                options = list(active_choices.keys())
+                
+                counts = {}
+                remainders = {}
+                for opt in options:
+                    target = (active_choices[opt] / total_weight) * count
+                    counts[opt] = int(target)
+                    remainders[opt] = target - counts[opt]
+                
+                allocated = sum(counts.values())
+                unallocated = count - allocated
+                
+                sorted_options = sorted(options, key=lambda o: remainders[o], reverse=True)
+                for i in range(unallocated):
+                    opt = sorted_options[i % len(sorted_options)]
+                    counts[opt] += 1
+                
+                pool = []
+                for opt, opt_count in counts.items():
+                    if opt == '__other_option__':
+                        for _ in range(opt_count):
+                            pool.append(faker.word())
+                    else:
+                        pool.extend([opt] * opt_count)
+                
+                random.shuffle(pool)
+                while len(pool) < count:
+                    pool.append(random.choice(options) if options else gforms.elements.Value.EMPTY)
+                pregenerated[elem.id] = pool[:count]
+                
+            # 2. Checkboxes
+            elif elem_class == 'Checkboxes':
+                choices_cfg = config_field.get('choices')
+                if not choices_cfg:
+                    choices_cfg = config_field.get('options', {})
+                
+                active_choices = {}
+                if hasattr(elem, 'options') and elem.options:
+                    for opt in elem.options:
+                        matched_key = None
+                        for cfg_key in choices_cfg.keys():
+                            if backend_fuzzy_match(cfg_key, opt.value):
+                                matched_key = cfg_key
+                                break
+                        if matched_key is not None:
+                            weight = float(choices_cfg[matched_key])
+                            if weight > 0:
+                                active_choices[opt.value] = weight
+                    
+                    if elem.other_option is not None:
+                        matched_key = None
+                        for cfg_key in choices_cfg.keys():
+                            if cfg_key == '__other_option__' or backend_fuzzy_match(cfg_key, 'khác') or backend_fuzzy_match(cfg_key, 'đáp án khác (tự động)'):
+                                matched_key = cfg_key
+                                break
+                        if matched_key is not None:
+                            weight = float(choices_cfg[matched_key])
+                            if weight > 0:
+                                active_choices['__other_option__'] = weight
+                
+                if not active_choices:
+                    values = []
+                    for _ in range(count):
+                        if hasattr(elem, 'options') and elem.options:
+                            values.append([random.choice(elem.options).value])
+                        else:
+                            values.append(gforms.elements.Value.EMPTY)
+                    pregenerated[elem.id] = values
+                    continue
+                
+                pools_by_choice = {}
+                for choice_val, weight in active_choices.items():
+                    target_yes = int(round((weight / 100.0) * count))
+                    target_no = count - target_yes
+                    c_pool = [True] * target_yes + [False] * target_no
+                    random.shuffle(c_pool)
+                    pools_by_choice[choice_val] = c_pool
+                
+                values = []
+                for idx in range(count):
+                    selected = []
+                    for choice_val, c_pool in pools_by_choice.items():
+                        if c_pool[idx]:
+                            if choice_val == '__other_option__':
+                                selected.append(faker.word())
+                            else:
+                                selected.append(choice_val)
+                    if elem.required and not selected:
+                        options_list = list(active_choices.keys())
+                        weights_list = list(active_choices.values())
+                        chosen = random.choices(options_list, weights=weights_list, k=1)[0]
+                        if chosen == '__other_option__':
+                            selected.append(faker.word())
+                        else:
+                            selected.append(chosen)
+                    values.append(selected)
+                pregenerated[elem.id] = values
+                
+            # 3. Grids (RadioGrid, CheckboxGrid)
+            elif elem_class in ['RadioGrid', 'CheckboxGrid']:
+                rows_cfg = config_field.get('rows', {})
+                row_pools = {}
+                for row in elem.rows:
+                    matched_row_key = None
+                    for r_key in rows_cfg.keys():
+                        if backend_fuzzy_match(r_key, row):
+                            matched_row_key = r_key
+                            break
+                    row_cfg = rows_cfg.get(matched_row_key, {}) if matched_row_key else {}
+                    choices_cfg = None
+                    if isinstance(row_cfg, dict):
+                        choices_cfg = row_cfg.get('choices')
+                        if not choices_cfg:
+                            choices_cfg = row_cfg.get('options')
+                        if not choices_cfg:
+                            choices_cfg = row_cfg
+                    else:
+                        choices_cfg = {}
+                    
+                    active_choices = {}
+                    if choices_cfg and hasattr(elem, 'cols') and elem.cols:
+                        for col in elem.cols:
+                            matched_col_key = None
+                            for c_key in choices_cfg.keys():
+                                if backend_fuzzy_match(c_key, col.value):
+                                    matched_col_key = c_key
+                                    break
+                            if matched_col_key is not None:
+                                weight = float(choices_cfg[matched_col_key])
+                                if weight > 0:
+                                    active_choices[col.value] = weight
+                    
+                    if elem_class == 'RadioGrid':
+                        if not active_choices:
+                            pool = [random.choice(elem.cols).value for _ in range(count)]
+                        else:
+                            total_weight = sum(active_choices.values())
+                            options = list(active_choices.keys())
+                            counts = {}
+                            remainders = {}
+                            for opt in options:
+                                target = (active_choices[opt] / total_weight) * count
+                                counts[opt] = int(target)
+                                remainders[opt] = target - counts[opt]
+                            allocated = sum(counts.values())
+                            unallocated = count - allocated
+                            sorted_options = sorted(options, key=lambda o: remainders[o], reverse=True)
+                            for i in range(unallocated):
+                                opt = sorted_options[i % len(sorted_options)]
+                                counts[opt] += 1
+                            pool = []
+                            for opt, opt_count in counts.items():
+                                pool.extend([opt] * opt_count)
+                            random.shuffle(pool)
+                            while len(pool) < count:
+                                pool.append(random.choice(options) if options else elem.cols[0].value)
+                        row_pools[row] = pool[:count]
+                    else:  # CheckboxGrid
+                        if not active_choices:
+                            pool = [[random.choice(elem.cols).value] for _ in range(count)]
+                        else:
+                            pools_by_col = {}
+                            for col_val, weight in active_choices.items():
+                                target_yes = int(round((weight / 100.0) * count))
+                                target_no = count - target_yes
+                                c_pool = [True] * target_yes + [False] * target_no
+                                random.shuffle(c_pool)
+                                pools_by_col[col_val] = c_pool
+                            
+                            pool = []
+                            for idx in range(count):
+                                selected = []
+                                for col_val, c_pool in pools_by_col.items():
+                                    if c_pool[idx]:
+                                        selected.append(col_val)
+                                if elem.required and not selected:
+                                    options_list = list(active_choices.keys())
+                                    weights_list = list(active_choices.values())
+                                    chosen = random.choices(options_list, weights=weights_list, k=1)[0]
+                                    selected.append(chosen)
+                                pool.append(selected)
+                        row_pools[row] = pool[:count]
+                
+                grid_values = []
+                for idx in range(count):
+                    run_answers = []
+                    for row in elem.rows:
+                        run_answers.append(row_pools[row][idx])
+                    grid_values.append(run_answers)
+                pregenerated[elem.id] = grid_values
+            else:
+                pregenerated[elem.id] = None
+                
+    return pregenerated
+
+def submission_worker(url, count, delay, fields_config, strict_mode=False):
     global runner_state
     
     try:
@@ -338,6 +586,17 @@ def submission_worker(url, count, delay, fields_config):
             return
             
         runner_state.add_log(f"✅ Đã kết nối biểu mẫu: \"{form.title}\"")
+        
+        # Pregenerate answers if in strict mode
+        pregenerated = {}
+        if strict_mode:
+            try:
+                pregenerated = pregenerate_campaign_answers(form, fields_config, count)
+                runner_state.add_log("🎯 Đã kích hoạt Chế độ điền tỷ lệ tuyệt đối (Strict Mode) thành công!")
+            except Exception as e:
+                runner_state.add_log(f"⚠️ Không thể khởi tạo Chế độ tỷ lệ tuyệt đối: {str(e)}. Chuyển sang điền ngẫu nhiên.")
+                strict_mode = False
+
         runner_state.add_log(f"🚀 Bắt đầu chiến dịch tự động điền {count} lượt...")
     except Exception as e:
         runner_state.add_log(f"❌ Lỗi kết nối biểu mẫu: {str(e)}")
@@ -360,8 +619,13 @@ def submission_worker(url, count, delay, fields_config):
                 for elem in page.elements:
                     if not isinstance(elem, gforms.elements.InputElement):
                         continue
-                    config_field = fields_config.get(str(elem.id), {})
-                    answers[elem.id] = generate_value_for_element(elem, config_field)
+                        
+                    elem_id = elem.id
+                    if strict_mode and elem_id in pregenerated and pregenerated[elem_id] is not None:
+                        answers[elem_id] = pregenerated[elem_id][idx]
+                    else:
+                        config_field = fields_config.get(str(elem_id), {})
+                        answers[elem_id] = generate_value_for_element(elem, config_field)
             
             # Callback function to fill the form
             def fill_callback(element, page_index, element_index):
@@ -491,10 +755,12 @@ def start_campaign():
         
     runner_state.reset(count)
     
+    strict_mode = bool(data.get('strict_mode', False))
+    
     # Start thread
     thread = threading.Thread(
         target=submission_worker,
-        args=(url, count, delay, fields_config)
+        args=(url, count, delay, fields_config, strict_mode)
     )
     thread.daemon = True
     thread.start()

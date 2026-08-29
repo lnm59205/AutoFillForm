@@ -1466,6 +1466,9 @@ document.addEventListener('DOMContentLoaded', () => {
             btnStart.classList.add('hidden');
             if (btnStop) btnStop.classList.remove('hidden');
             
+            const strictModeCheckbox = document.getElementById('campaign-strict-mode');
+            const strictMode = strictModeCheckbox ? strictModeCheckbox.checked : false;
+            
             // Call API
             try {
                 const res = await fetch('/api/start', {
@@ -1476,6 +1479,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         fields: config,
                         count: submissions,
                         delay: delay,
+                        strict_mode: strictMode,
                         form_data: parsedForm,
                         config: config,
                         total_submissions: submissions
