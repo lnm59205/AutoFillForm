@@ -127,7 +127,9 @@ def generate_value_for_element(elem, config_field):
 
     # Radio button, Dropdown, or Linear Scale
     elif elem_class in ['Radio', 'Dropdown', 'Scale']:
-        choices_cfg = config_field.get('choices', {})
+        choices_cfg = config_field.get('choices')
+        if not choices_cfg:
+            choices_cfg = config_field.get('options', {})
         
         # Filter choices configured with positive percentages
         active_choices = {k: float(v) for k, v in choices_cfg.items() if float(v) > 0}
@@ -148,10 +150,12 @@ def generate_value_for_element(elem, config_field):
         if chosen == '__other_option__':
             return faker.word()
         return chosen
-
+ 
     # Checkboxes
     elif elem_class == 'Checkboxes':
-        choices_cfg = config_field.get('choices', {})
+        choices_cfg = config_field.get('choices')
+        if not choices_cfg:
+            choices_cfg = config_field.get('options', {})
         active_choices = {k: float(v) for k, v in choices_cfg.items() if float(v) > 0}
         
         if not active_choices:
@@ -187,8 +191,17 @@ def generate_value_for_element(elem, config_field):
         
         for row in elem.rows:
             row_cfg = rows_cfg.get(row, {})
-            choices_cfg = row_cfg.get('choices', {})
-            active_choices = {k: float(v) for k, v in choices_cfg.items() if float(v) > 0}
+            choices_cfg = None
+            if isinstance(row_cfg, dict):
+                choices_cfg = row_cfg.get('choices')
+                if not choices_cfg:
+                    choices_cfg = row_cfg.get('options')
+                if not choices_cfg:
+                    choices_cfg = row_cfg
+            else:
+                choices_cfg = {}
+                
+            active_choices = {k: float(v) for k, v in choices_cfg.items() if float(v) > 0} if choices_cfg else {}
             
             if elem_class == 'RadioGrid':
                 if not active_choices:
