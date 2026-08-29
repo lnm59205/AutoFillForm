@@ -414,6 +414,6 @@ if __name__ == '__main__':
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     print("--------------------------------------------------")
     print(" Google Form Auto-Filler Server Running!")
-    print(" Mở trình duyệt truy cập: http://127.0.0.1:5000")
+    print(" Mo trinh duyet truy cap: http://127.0.0.1:5000")
     print("--------------------------------------------------")
     app.run(host='127.0.0.1', port=5000, debug=True)
