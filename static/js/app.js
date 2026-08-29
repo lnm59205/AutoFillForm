@@ -915,12 +915,37 @@ document.addEventListener('DOMContentLoaded', () => {
     function attachPercentInputEvents() {
         const percentInputs = document.querySelectorAll('.choice-percent-input');
         percentInputs.forEach(input => {
+            // Clear default '0' on click/focus to allow direct typing
+            input.addEventListener('focus', () => {
+                if (input.value === '0') {
+                    input.value = '';
+                } else {
+                    input.select();
+                }
+            });
+
             input.addEventListener('input', () => {
-                let val = parseInt(input.value);
-                if (isNaN(val) || val < 0) input.value = 0;
-                if (val > 100) input.value = 100;
+                let rawVal = input.value;
+                if (rawVal === '') {
+                    updateAllSums();
+                    return;
+                }
                 
+                let val = parseInt(rawVal);
+                if (isNaN(val) || val < 0) {
+                    input.value = 0;
+                } else if (val > 100) {
+                    input.value = 100;
+                }
                 updateAllSums();
+            });
+
+            // Restore '0' if user leaves input empty
+            input.addEventListener('blur', () => {
+                if (input.value.trim() === '') {
+                    input.value = 0;
+                    updateAllSums();
+                }
             });
         });
         updateAllSums();
