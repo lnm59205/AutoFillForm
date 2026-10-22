@@ -488,6 +488,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const checklistContainer = document.getElementById('question-checklist-container');
     
     const btnAutoFillPercent = document.getElementById('btn-auto-fill-percent');
+    const btnAiDistribute = document.getElementById('btn-ai-distribute');
+    const btnAiText = document.getElementById('btn-ai-text');
+    const btnAiSpinner = document.getElementById('btn-ai-spinner');
+    const aiPromptInput = document.getElementById('ai-prompt-input');
+    const aiStatusMsg = document.getElementById('ai-status-msg');
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
     const btnClearLogs = document.getElementById('btn-clear-logs');
@@ -737,19 +742,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (['Short', 'Paragraph', 'UserEmail'].includes(elem.type)) {
                     innerHtml += `
                         <div class="strategy-select-container">
-                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600; display:block; margin-bottom:4px;">Bộ sinh dữ liệu ảo:</label>
-                            <select class="strategy-select" onchange="handleStrategyChange(this)">
-                                <option value="default">(Mặc định tự nhận diện)</option>
-                                <option value="vi_name">Họ & Tên Tiếng Việt</option>
-                                <option value="vi_phone">Số Điện Thoại VN (09x/03x...)</option>
-                                <option value="email">Địa Chỉ Email Ngẫu Nhiên</option>
-                                <option value="number">Số Tuổi Ngẫu Nhiên (18 - 60)</option>
-                                <option value="text">Văn Bản Ngẫu Nhiên</option>
-                                <option value="static">Giá Trị Cố Định</option>
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                                <i class="fa-solid fa-envelope" style="color: #38bdf8;"></i> Bộ sinh dữ liệu:
+                            </label>
+                            <select class="strategy-select" style="font-weight: 600; color: #34d399; background: rgba(15, 23, 42, 0.6); border-color: rgba(52, 211, 153, 0.3);">
+                                <option value="email" selected>Địa Chỉ Email Ngẫu Nhiên (@gmail.com chuẩn người thật)</option>
                             </select>
-                            <div class="static-input-wrapper hidden" style="margin-top:8px;">
-                                <input type="text" class="static-value-input" placeholder="Nhập giá trị điền cố định..." />
-                            </div>
                         </div>
                     `;
                 } else if (['Radio', 'Dropdown', 'Scale'].includes(elem.type)) {
@@ -1031,6 +1029,149 @@ document.addEventListener('DOMContentLoaded', () => {
         btnAutoFillPercent.addEventListener('click', autoFillEqualPercentages);
     }
 
+    // AI Prompt quick chips
+    document.querySelectorAll('.ai-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const promptText = chip.dataset.prompt;
+            if (aiPromptInput && promptText) {
+                aiPromptInput.value = promptText;
+                aiPromptInput.focus();
+            }
+        });
+    });
+
+    // Handle AI Distribution Request
+    if (btnAiDistribute) {
+        btnAiDistribute.addEventListener('click', async () => {
+            if (!parsedForm) {
+                alert("Vui lòng dán link Google Form và bấm 'Phân Tích Form' trước khi dùng tính năng AI.");
+                return;
+            }
+
+            const prompt = aiPromptInput ? aiPromptInput.value.trim() : '';
+            if (!prompt) {
+                alert("Vui lòng nhập nội dung yêu cầu chia tỷ lệ % vào ô prompt (hoặc chọn mẫu gợi ý bên dưới).");
+                if (aiPromptInput) aiPromptInput.focus();
+                return;
+            }
+
+            // Extract questions from parsedForm
+            const questions = [];
+            if (parsedForm.pages) {
+                parsedForm.pages.forEach(page => {
+                    (page.elements || []).forEach(elem => {
+                        if (['Radio', 'Dropdown', 'Scale', 'Checkboxes', 'RadioGrid', 'CheckboxGrid'].includes(elem.type)) {
+                            questions.push({
+                                id: String(elem.id),
+                                name: elem.name || 'Câu hỏi',
+                                type: elem.type,
+                                choices: elem.choices || [],
+                                has_other: !!elem.has_other,
+                                rows: elem.rows || []
+                            });
+                        }
+                    });
+                });
+            }
+
+            if (questions.length === 0) {
+                alert("Biểu mẫu này không có câu hỏi trắc nghiệm hoặc bảng nào để phân bổ tỷ lệ %.");
+                return;
+            }
+
+            // UI loading state
+            btnAiDistribute.disabled = true;
+            if (btnAiText) btnAiText.classList.add('hidden');
+            if (btnAiSpinner) btnAiSpinner.classList.remove('hidden');
+            if (aiStatusMsg) {
+                aiStatusMsg.className = 'ai-status-msg hidden';
+                aiStatusMsg.textContent = '';
+            }
+
+            try {
+                const response = await fetch('/api/ai-distribute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        questions: questions
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || "Lỗi khi gọi Groq AI.");
+                }
+
+                const dist = data.distribution || {};
+                let updatedCount = 0;
+
+                // Apply distributed percentages to DOM inputs
+                const qItems = document.querySelectorAll('.question-item');
+                qItems.forEach(qItem => {
+                    const id = String(qItem.dataset.id);
+                    const type = qItem.dataset.type;
+                    const qDist = dist[id];
+                    if (!qDist) return;
+
+                    if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
+                        const choiceRows = qItem.querySelectorAll('.choice-row');
+                        choiceRows.forEach(row => {
+                            const val = row.dataset.choiceValue;
+                            const input = row.querySelector('.choice-percent-input');
+                            if (input && qDist[val] !== undefined) {
+                                input.value = qDist[val];
+                            } else if (input && val === '__other_option__' && qDist['Mục khác'] !== undefined) {
+                                input.value = qDist['Mục khác'];
+                            }
+                        });
+                        updatedCount++;
+                    } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
+                        const rowContainers = qItem.querySelectorAll('.grid-row-container');
+                        rowContainers.forEach(container => {
+                            const rowName = container.dataset.rowName;
+                            const rowDist = qDist[rowName];
+                            if (rowDist) {
+                                const choiceRows = container.querySelectorAll('.choice-row');
+                                choiceRows.forEach(crow => {
+                                    const val = crow.dataset.choiceValue;
+                                    const input = crow.querySelector('.choice-percent-input');
+                                    if (input && rowDist[val] !== undefined) {
+                                        input.value = rowDist[val];
+                                    }
+                                });
+                            }
+                        });
+                        updatedCount++;
+                    }
+                });
+
+                updateAllSums();
+
+                const summaryText = data.summary || "Đã phân tích prompt và phân bổ % chuẩn xác 100%!";
+                if (aiStatusMsg) {
+                    aiStatusMsg.className = 'ai-status-msg success';
+                    aiStatusMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Thành công:</strong> ${summaryText} (Đã cập nhật ${updatedCount} câu hỏi).`;
+                    aiStatusMsg.classList.remove('hidden');
+                }
+
+                addLog("system", `✨ Groq AI: "${summaryText}" - Đã cập nhật ${updatedCount} câu hỏi chuẩn 100%.`);
+
+            } catch (err) {
+                if (aiStatusMsg) {
+                    aiStatusMsg.className = 'ai-status-msg error';
+                    aiStatusMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Lỗi AI:</strong> ${err.message}`;
+                    aiStatusMsg.classList.remove('hidden');
+                }
+                addLog("error", `Lỗi phân tích AI: ${err.message}`);
+            } finally {
+                btnAiDistribute.disabled = false;
+                if (btnAiText) btnAiText.classList.remove('hidden');
+                if (btnAiSpinner) btnAiSpinner.classList.add('hidden');
+            }
+        });
+    }
+
     function autoFillEqualPercentages() {
         if (!parsedForm) return;
         
@@ -1129,6 +1270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const submissions = parseInt(document.getElementById('campaign-submissions').value) || 10;
         const delay = parseFloat(document.getElementById('campaign-delay').value) || 1.0;
+        const distributionMode = 'absolute';
         
         return {
             url: formUrlInput.value.trim().startsWith('CONFIG_') ? parsedForm.url : formUrlInput.value.trim(),
@@ -1136,6 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             description: parsedForm.description,
             submissions: submissions,
             delay: delay,
+            distribution_mode: distributionMode,
             percentages: percentages,
             strategies: strategies,
             static_values: static_values
@@ -1424,11 +1567,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
                     const select = qItem.querySelector('.strategy-select');
-                    const staticVal = qItem.querySelector('.static-value-input').value;
+                    const staticInput = qItem.querySelector('.static-value-input');
                     config[id] = {
                         type: type,
-                        strategy: select.value,
-                        static_value: staticVal
+                        strategy: select ? select.value : 'email',
+                        static_value: staticInput ? staticInput.value : ''
                     };
                 } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
                     const choiceRows = qItem.querySelectorAll('.choice-row');
@@ -1466,8 +1609,8 @@ document.addEventListener('DOMContentLoaded', () => {
             btnStart.classList.add('hidden');
             if (btnStop) btnStop.classList.remove('hidden');
             
-            const strictModeCheckbox = document.getElementById('campaign-strict-mode');
-            const strictMode = strictModeCheckbox ? strictModeCheckbox.checked : false;
+            const distributionMode = 'absolute';
+            const strictMode = true;
             
             // Call API
             try {
@@ -1479,6 +1622,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         fields: config,
                         count: submissions,
                         delay: delay,
+                        distribution_mode: distributionMode,
                         strict_mode: strictMode,
                         form_data: parsedForm,
                         config: config,

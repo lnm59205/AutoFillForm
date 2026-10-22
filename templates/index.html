@@ -258,6 +258,40 @@
                                         </div>
                                     </div>
                                     <div class="card-body">
+                                        <!-- GROQ AI ASSISTANT PANEL -->
+                                        <div class="ai-assistant-card">
+                                            <div class="ai-assistant-header">
+                                                <div class="ai-title">
+                                                    <i class="fa-solid fa-wand-magic-sparkles ai-sparkle-icon"></i>
+                                                    <div>
+                                                        <strong>Trợ Lý Phân Bổ Tỷ Lệ % Bằng AI (Groq LPU)</strong>
+                                                        <span class="ai-badge">Siêu tốc độ & Tự động chuẩn hóa 100%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="ai-assistant-body">
+                                                <div class="ai-prompt-wrapper">
+                                                    <textarea id="ai-prompt-input" rows="2" placeholder="Nhập yêu cầu phân bổ mong muốn bằng lời văn tiếng Việt (Ví dụ: 80% sinh viên năm 3-4, đa số rất hài lòng với chất lượng đào tạo, học phí thấy hơi cao, cơ sở vật chất khen nhiều...)"></textarea>
+                                                    <button id="btn-ai-distribute" class="btn btn-ai-action" type="button">
+                                                        <span id="btn-ai-text"><i class="fa-solid fa-bolt"></i> AI Chia % Ngay</span>
+                                                        <span id="btn-ai-spinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang phân tích...</span>
+                                                    </button>
+                                                </div>
+
+                                                <!-- Quick Prompt Recommendation Chips -->
+                                                <div class="ai-quick-prompts">
+                                                    <span class="ai-chip-label"><i class="fa-solid fa-lightbulb"></i> Gợi ý prompt:</span>
+                                                    <button type="button" class="ai-chip" data-prompt="Đa số đánh giá rất hài lòng và tích cực (khoảng 80-90%), rất ít ý kiến tiêu cực.">👍 Hài lòng cao (Tích cực)</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Khảo sát sinh viên: 70% là sinh viên năm 3 và năm 4, đánh giá chất lượng tốt nhưng học phí hơi cao.">🎓 Sinh viên năm 3-4</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Đánh giá khách quan, cân bằng: mức hài lòng và bình thường chiếm đa số, phân bổ đều tự nhiên.">⚖️ Khách quan, cân bằng</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Nhiều phản ánh cần cải thiện: mức độ chưa hài lòng và bình thường chiếm tỷ lệ cao hơn.">👎 Góp ý, cần cải thiện</button>
+                                                </div>
+
+                                                <div id="ai-status-msg" class="ai-status-msg hidden"></div>
+                                            </div>
+                                        </div>
+
                                         <div id="form-questions-container">
                                             <!-- Questions dynamically loaded here -->
                                         </div>
@@ -273,24 +307,30 @@
                                         <h2><span class="step-badge">3</span> Thiết Lập Chiến Dịch</h2>
                                     </div>
                                     <div class="card-body" style="padding: 18px 20px;">
-                                         <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                                             <div class="form-group" style="margin-bottom: 0;">
+                                         <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+                                             <div class="form-group" style="margin-bottom: 0; flex: 1;">
                                                  <label style="font-size:12.5px;">Số lượt điền:</label>
                                                  <input type="number" id="campaign-submissions" value="10" min="1">
                                              </div>
-                                             <div class="form-group" style="margin-bottom: 0;">
+                                             <div class="form-group" style="margin-bottom: 0; flex: 1;">
                                                  <label style="font-size:12.5px;">Khoảng trễ (s):</label>
                                                  <input type="number" id="campaign-delay" value="1.0" min="0.1" step="0.1">
                                              </div>
                                          </div>
-                                         <div style="margin-bottom: 16px; padding: 12px 14px; background: hsla(180, 100%, 45%, 0.04); border: 1px dashed hsla(180, 100%, 45%, 0.25); border-radius: var(--radius-sm);">
-                                             <label style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--text-main); cursor: pointer; user-select: none; font-weight: 600;">
-                                                 <input type="checkbox" id="campaign-strict-mode" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--primary);">
-                                                 <span>Chia tỉ lệ tuyệt đối (Strict Mode)</span>
-                                             </label>
-                                             <p style="font-size: 11.5px; color: var(--text-muted); margin: 6px 0 0 28px; line-height: 1.5;">
-                                                 💡 <strong>Khuyên dùng:</strong> Đảm bảo biểu đồ kết quả Google Forms thu được khớp <strong>chính xác 100%</strong> với tỷ lệ % bạn đã cấu hình (tự động loại bỏ độ lệch ngẫu nhiên của xác suất khi chạy số lượng ít).
-                                             </p>
+
+                                         <!-- Distribution Mode Notification (Default Guaranteed Absolute Split) -->
+                                         <div class="distribution-mode-wrapper" style="margin-bottom: 16px;">
+                                             <div class="mode-banner mode-banner-absolute" style="margin-top: 4px;">
+                                                 <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                                     <i class="fa-solid fa-bullseye" style="color: #fbbf24; font-size: 18px; margin-top: 2px;"></i>
+                                                     <div>
+                                                         <strong style="font-size: 13px; color: #fbbf24; display: block;">Mặc định: Chia Tuyệt Đối (Chuẩn 100% Theo % & Số Lượng Mẫu)</strong>
+                                                         <p style="font-size: 11.5px; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.45;">
+                                                             Hệ thống mặc định chia chuẩn xác 100% số lượng mẫu theo đúng tỷ lệ % bạn đã cấu hình (áp dụng thuật toán phần dư lớn nhất Hamilton, loại trừ hoàn toàn sai số ngẫu nhiên).
+                                                         </p>
+                                                     </div>
+                                                 </div>
+                                             </div>
                                          </div>
                                         
                                         <!-- Actions Container Inside Settings -->
