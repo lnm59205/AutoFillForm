@@ -254,32 +254,121 @@ def generate_vi_phone():
     suffix = ''.join(random.choices('0123456789', k=7))
     return f"{prefix}{suffix}"
 
-VI_EMAIL_FIRST_NAMES = [
+VI_SURNAMES = [
     'nguyen', 'tran', 'le', 'pham', 'hoang', 'huynh', 'phan', 'vu', 'vo', 
-    'dang', 'bui', 'do', 'ho', 'ngo', 'duong', 'ly', 'dinh', 'ha', 'doan'
-]
-VI_EMAIL_MIDDLE_NAMES = [
-    'van', 'thi', 'duc', 'hai', 'xuan', 'thu', 'minh', 'quang', 'ngoc', 
-    'huu', 'anh', 'thanh', 'phuong', 'hoang', 'quoc', 'gia', 'bao'
-]
-VI_EMAIL_LAST_NAMES = [
-    'anh', 'nam', 'duc', 'huy', 'tuan', 'long', 'hung', 'thang', 'trung',
-    'dung', 'dat', 'khoa', 'kien', 'tung', 'hai', 'quan', 'hoang',
-    'linh', 'mai', 'trang', 'huong', 'thao', 'ha', 'ngan', 'quynh',
-    'lan', 'chi', 'vy', 'nhung', 'uyen', 'yen', 'hang', 'ngoc', 'tram'
-]
-VI_EMAIL_DOMAINS = [
-    'gmail.com', 'gmail.com', 'gmail.com', 'gmail.com', 'gmail.com', 
-    'gmail.com', 'gmail.com', 'gmail.com', 'gmail.com', 'gmail.com',
-    'outlook.com', 'yahoo.com'
+    'dang', 'bui', 'do', 'ho', 'ngo', 'duong', 'ly', 'dinh', 'doan', 'lam', 
+    'trinh', 'mai', 'dao', 'cao', 'ha', 'luong', 'thai', 'ta', 'chau', 'phung',
+    'dieu', 'quach', 'ninh', 'tu', 'mac', 'la', 'nham', 'luc', 'trieu', 'vuong'
 ]
 
+VI_MIDDLE_NAMES = [
+    'van', 'thi', 'duc', 'hai', 'xuan', 'thu', 'minh', 'quang', 'ngoc', 
+    'huu', 'anh', 'thanh', 'phuong', 'quoc', 'gia', 'bao', 'hoang', 'dinh', 
+    'cong', 'trong', 'tien', 'viet', 'chi', 'khanh', 'phuc', 'huong', 'tu',
+    'my', 'kim', 'bich', 'thao', 'tam', 'dien', 'hien'
+]
+
+VI_MALE_NAMES = [
+    'nam', 'duc', 'huy', 'tuan', 'long', 'hung', 'thang', 'trung', 'dung', 
+    'dat', 'khoa', 'kien', 'tung', 'hai', 'quan', 'hoang', 'bach', 'binh', 
+    'cuong', 'dai', 'hieu', 'hiep', 'loc', 'nghia', 'nhan', 'phi', 'phong', 
+    'sang', 'son', 'tai', 'thuan', 'tri', 'trong', 'truong', 'uy', 'viet', 'vu', 'vinh'
+]
+
+VI_FEMALE_NAMES = [
+    'anh', 'linh', 'mai', 'trang', 'huong', 'thao', 'ha', 'ngan', 'quynh', 
+    'lan', 'chi', 'vy', 'nhung', 'uyen', 'yen', 'hang', 'ngoc', 'tram', 
+    'chau', 'diem', 'diep', 'duyen', 'giang', 'hoa', 'huyen', 'khue', 'loan', 
+    'ly', 'nga', 'oanh', 'phuong', 'sen', 'thanh', 'thuy', 'tien', 'tra', 'truc', 'van'
+]
+
+VI_EMAIL_DOMAINS = ['gmail.com'] * 9 + ['outlook.com', 'yahoo.com']
+
+_last_standalone_state = {'sur': '', 'name': '', 'is_male': True}
+
+def generate_unique_email_pool(count):
+    """
+    Sinh danh sách email người thật đảm bảo:
+    - 100% không trùng lặp trong cả chiến dịch (used_emails set).
+    - Các câu trả lời liền kề nhau có họ và tên hoàn toàn khác biệt, đảo luân phiên nam/nữ.
+    - Viết liền, không có dấu chấm (.), không dùng domain example.
+    """
+    pool = []
+    used_emails = set()
+    last_sur = ''
+    last_name = ''
+    is_male_turn = True
+
+    for idx in range(count):
+        chosen_email = None
+        for attempt in range(1000):
+            available_surs = [s for s in VI_SURNAMES if s != last_sur]
+            sur = random.choice(available_surs)
+            mid = random.choice(VI_MIDDLE_NAMES)
+            
+            name_list = VI_MALE_NAMES if is_male_turn else VI_FEMALE_NAMES
+            available_names = [n for n in name_list if n != last_name]
+            name = random.choice(available_names)
+            
+            domain = random.choice(VI_EMAIL_DOMAINS)
+            
+            birth_year = random.randint(1994, 2006)
+            short_year = str(birth_year)[2:]
+            rand_num = random.randint(11, 999)
+            day = random.randint(1, 28)
+            month = random.randint(1, 12)
+            ddmm = f"{day:02d}{month:02d}"
+            
+            style = idx % 6
+            if style == 0:
+                user = f"{sur}{mid}{name}{short_year}"
+            elif style == 1:
+                user = f"{name}{sur}{birth_year}"
+            elif style == 2:
+                user = f"{sur}{name}{ddmm}"
+            elif style == 3:
+                user = f"{name}{mid}{sur}{short_year}"
+            elif style == 4:
+                user = f"{sur}{name}{rand_num}"
+            else:
+                user = f"{name}{sur[0]}{mid[0]}{short_year}"
+                
+            user = user.replace('.', '').strip()
+            email = f"{user}@{domain}"
+            
+            if email not in used_emails:
+                used_emails.add(email)
+                chosen_email = email
+                last_sur = sur
+                last_name = name
+                is_male_turn = not is_male_turn
+                break
+
+        if not chosen_email:
+            rand_code = random.randint(10000, 99999)
+            chosen_email = f"user{idx}{rand_code}@gmail.com"
+            used_emails.add(chosen_email)
+            
+        pool.append(chosen_email)
+        
+    return pool
+
 def generate_real_vi_email():
-    f = random.choice(VI_EMAIL_FIRST_NAMES)
-    m = random.choice(VI_EMAIL_MIDDLE_NAMES)
-    l = random.choice(VI_EMAIL_LAST_NAMES)
-    domain = random.choice(VI_EMAIL_DOMAINS)
+    """Sinh 1 email đơn lẻ đảm bảo không trùng họ và tên với email vừa sinh trước đó."""
+    global _last_standalone_state
+    last_sur = _last_standalone_state['sur']
+    last_name = _last_standalone_state['name']
+    is_male = _last_standalone_state['is_male']
     
+    available_surs = [s for s in VI_SURNAMES if s != last_sur]
+    sur = random.choice(available_surs)
+    mid = random.choice(VI_MIDDLE_NAMES)
+    
+    name_list = VI_MALE_NAMES if is_male else VI_FEMALE_NAMES
+    available_names = [n for n in name_list if n != last_name]
+    name = random.choice(available_names)
+    
+    domain = random.choice(VI_EMAIL_DOMAINS)
     birth_year = random.randint(1994, 2006)
     short_year = str(birth_year)[2:]
     rand_num = random.randint(10, 999)
@@ -288,25 +377,19 @@ def generate_real_vi_email():
     ddmm = f"{day:02d}{month:02d}"
     
     patterns = [
-        f"{f}{m}{l}{birth_year}",
-        f"{l}{f}{m}{birth_year}",
-        f"{l}{f}{short_year}",
-        f"{f}{l}{birth_year}",
-        f"{l}{m}{f}{short_year}",
-        f"{l}{f}{m}",
-        f"{f}{m}{l}",
-        f"{l}{f}{rand_num}",
-        f"{f}{l}{ddmm}",
-        f"{l}{f}{m}{rand_num}",
-        f"{f}{m[0]}{l[0]}{birth_year}",
-        f"{l}{f[0]}{m[0]}{short_year}",
-        f"{f}{m}{l}{short_year}",
-        f"{l}{ddmm}{short_year}",
-        f"{l}{ddmm}",
-        f"{f}{l}{short_year}",
-        f"{f}{l}{rand_num}"
+        f"{sur}{mid}{name}{short_year}",
+        f"{name}{sur}{birth_year}",
+        f"{sur}{name}{ddmm}",
+        f"{name}{mid}{sur}{short_year}",
+        f"{sur}{name}{rand_num}",
+        f"{name}{sur[0]}{mid[0]}{short_year}"
     ]
     user = random.choice(patterns).replace('.', '').strip()
+    
+    _last_standalone_state['sur'] = sur
+    _last_standalone_state['name'] = name
+    _last_standalone_state['is_male'] = not is_male
+    
     return f"{user}@{domain}"
 
 def backend_fuzzy_match(s1, s2):
@@ -884,6 +967,12 @@ def pregenerate_campaign_answers(form, fields_config, count):
                         run_answers.append(row_pools[row][idx])
                     grid_values.append(run_answers)
                 pregenerated[elem.id] = grid_values
+            elif elem_class in ['Short', 'Paragraph', 'UserEmail']:
+                strategy = config_field.get('strategy', 'email')
+                if strategy == 'static' and config_field.get('static_value'):
+                    pregenerated[elem.id] = [config_field.get('static_value')] * count
+                else:
+                    pregenerated[elem.id] = generate_unique_email_pool(count)
             else:
                 pregenerated[elem.id] = None
                 
