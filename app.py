@@ -392,6 +392,128 @@ def generate_real_vi_email():
     
     return f"{user}@{domain}"
 
+VI_SURNAMES_ACCENTED = [
+    'Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ',
+    'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương', 'Lý', 'Đinh', 'Đoàn', 'Lâm',
+    'Trịnh', 'Mai', 'Đào', 'Cao', 'Hà', 'Lương', 'Thái', 'Tạ', 'Châu', 'Phùng'
+]
+
+VI_MALE_MIDDLES_ACCENTED = [
+    'Văn', 'Đức', 'Minh', 'Quang', 'Hữu', 'Thành', 'Quốc', 'Gia', 'Bảo',
+    'Hoàng', 'Đình', 'Công', 'Trọng', 'Tiến', 'Việt', 'Khánh', 'Phúc', 'Tuấn', 'Anh'
+]
+
+VI_FEMALE_MIDDLES_ACCENTED = [
+    'Thị', 'Thu', 'Ngọc', 'Phương', 'Thanh', 'Khánh', 'Hồng', 'Mai', ' Thảo',
+    'Bích', 'Kim', 'Mỹ', 'Bảo', 'Thùy', 'Diệu', 'Quỳnh', 'Nhật', 'Ánh', 'Lan'
+]
+
+VI_MALE_NAMES_ACCENTED = [
+    'Nam', 'Đức', 'Huy', 'Tuấn', 'Long', 'Hùng', 'Thắng', 'Trung', 'Dũng',
+    'Đạt', 'Khoa', 'Kiên', 'Tùng', 'Hải', 'Quân', 'Hoàng', 'Bách', 'Bình',
+    'Cường', 'Đại', 'Hiếu', 'Hiệp', 'Lộc', 'Nghĩa', 'Nhân', 'Phong',
+    'Sáng', 'Sơn', 'Tài', 'Thuận', 'Trí', 'Trường', 'Việt', 'Vũ', 'Vinh'
+]
+
+VI_FEMALE_NAMES_ACCENTED = [
+    'Anh', 'Linh', 'Mai', 'Trang', 'Hương', 'Thảo', 'Hà', 'Ngân', 'Quỳnh',
+    'Lan', 'Chi', 'Vy', 'Nhung', 'Uyên', 'Yến', 'Hằng', 'Ngọc', 'Trâm',
+    'Châu', 'Diễm', 'Diệp', 'Duyên', 'Giang', 'Hoa', 'Huyền', 'Khuê',
+    'Ly', 'Nga', 'Oanh', 'Phương', 'Thanh', 'Thủy', 'Tiên', 'Trúc', 'Vân'
+]
+
+def generate_real_vi_fullname():
+    is_male = random.choice([True, False])
+    sur = random.choice(VI_SURNAMES_ACCENTED)
+    if is_male:
+        mid = random.choice(VI_MALE_MIDDLES_ACCENTED).strip()
+        name = random.choice(VI_MALE_NAMES_ACCENTED)
+    else:
+        mid = random.choice(VI_FEMALE_MIDDLES_ACCENTED).strip()
+        name = random.choice(VI_FEMALE_NAMES_ACCENTED)
+    return f"{sur} {mid} {name}"
+
+def generate_unique_vi_name_pool(count):
+    pool = []
+    used = set()
+    is_male_turn = True
+    last_sur = ''
+    last_name = ''
+    for _ in range(count):
+        chosen = None
+        for _ in range(500):
+            surs = [s for s in VI_SURNAMES_ACCENTED if s != last_sur]
+            sur = random.choice(surs)
+            if is_male_turn:
+                mid = random.choice(VI_MALE_MIDDLES_ACCENTED).strip()
+                names = [n for n in VI_MALE_NAMES_ACCENTED if n != last_name]
+                name = random.choice(names)
+            else:
+                mid = random.choice(VI_FEMALE_MIDDLES_ACCENTED).strip()
+                names = [n for n in VI_FEMALE_NAMES_ACCENTED if n != last_name]
+                name = random.choice(names)
+            full = f"{sur} {mid} {name}"
+            if full not in used:
+                used.add(full)
+                chosen = full
+                last_sur = sur
+                last_name = name
+                is_male_turn = not is_male_turn
+                break
+        if not chosen:
+            chosen = generate_real_vi_fullname()
+        pool.append(chosen)
+    return pool
+
+def generate_unique_phone_pool(count):
+    pool = []
+    used = set()
+    for _ in range(count):
+        p = generate_vi_phone()
+        for _ in range(200):
+            if p not in used:
+                break
+            p = generate_vi_phone()
+        used.add(p)
+        pool.append(p)
+    return pool
+
+def generate_mssv():
+    cohort = random.choice(['20', '21', '22', '23', '24'])
+    dept = random.choice(['01', '02', '03', '04', '05', '07', '11'])
+    num = random.randint(100, 9999)
+    return f"{cohort}{dept}{num:04d}"
+
+def generate_unique_mssv_pool(count):
+    pool = []
+    used = set()
+    for _ in range(count):
+        code = generate_mssv()
+        for _ in range(200):
+            if code not in used:
+                break
+            code = generate_mssv()
+        used.add(code)
+        pool.append(code)
+    return pool
+
+def generate_class_code():
+    cohort = random.choice(['K17', 'K18', 'K19', 'K20', 'K21'])
+    major = random.choice(['QTKD', 'CNTT', 'Kế toán', 'Marketing', 'Tài chính - Ngân hàng', 'Ngôn ngữ Anh', 'Logistics', 'Thương mại điện tử', 'Đông phương học', 'Du lịch'])
+    group = random.randint(1, 5)
+    return f"{cohort} {major} {group}"
+
+def generate_class_code_pool(count):
+    return [generate_class_code() for _ in range(count)]
+
+def parse_custom_list_values(raw_text):
+    if not raw_text or not isinstance(raw_text, str):
+        return []
+    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    if len(lines) == 1 and ';' in lines[0]:
+        lines = [item.strip() for item in lines[0].split(';') if item.strip()]
+    return lines
+
 def backend_fuzzy_match(s1, s2):
     if s1 is None or s2 is None:
         return False
@@ -524,10 +646,27 @@ def generate_value_for_element(elem, config_field, distribution_mode='absolute')
     elem_class = elem.__class__.__name__
     strategy = config_field.get('strategy', 'email')
     
-    # Text or Paragraph input (Mặc định sinh email người thật @gmail.com)
+    # Text or Paragraph input
     if elem_class in ['Short', 'Paragraph', 'UserEmail']:
-        if strategy == 'static' and config_field.get('static_value'):
-            return config_field.get('static_value')
+        if strategy == 'custom_list':
+            items = parse_custom_list_values(config_field.get('static_value', ''))
+            if items:
+                return random.choice(items)
+            return generate_real_vi_fullname()
+        elif strategy == 'static' and config_field.get('static_value') is not None:
+            return str(config_field.get('static_value')).strip()
+        elif strategy == 'vi_name':
+            return generate_real_vi_fullname()
+        elif strategy == 'vi_phone':
+            return generate_vi_phone()
+        elif strategy == 'mssv':
+            return generate_mssv()
+        elif strategy == 'class_code':
+            return generate_class_code()
+        elif strategy == 'number':
+            return str(random.randint(18, 60))
+        elif strategy == 'text':
+            return faker.sentence()
         return generate_real_vi_email()
 
     # Radio button, Dropdown, or Linear Scale
@@ -969,8 +1108,27 @@ def pregenerate_campaign_answers(form, fields_config, count):
                 pregenerated[elem.id] = grid_values
             elif elem_class in ['Short', 'Paragraph', 'UserEmail']:
                 strategy = config_field.get('strategy', 'email')
-                if strategy == 'static' and config_field.get('static_value'):
-                    pregenerated[elem.id] = [config_field.get('static_value')] * count
+                if strategy == 'custom_list':
+                    items = parse_custom_list_values(config_field.get('static_value', ''))
+                    if items:
+                        pregenerated[elem.id] = [items[i % len(items)] for i in range(count)]
+                    else:
+                        pregenerated[elem.id] = generate_unique_vi_name_pool(count)
+                elif strategy == 'static' and config_field.get('static_value'):
+                    val_str = str(config_field.get('static_value')).strip()
+                    pregenerated[elem.id] = [val_str] * count
+                elif strategy == 'vi_name':
+                    pregenerated[elem.id] = generate_unique_vi_name_pool(count)
+                elif strategy == 'vi_phone':
+                    pregenerated[elem.id] = generate_unique_phone_pool(count)
+                elif strategy == 'mssv':
+                    pregenerated[elem.id] = generate_unique_mssv_pool(count)
+                elif strategy == 'class_code':
+                    pregenerated[elem.id] = generate_class_code_pool(count)
+                elif strategy == 'number':
+                    pregenerated[elem.id] = [str(random.randint(18, 60)) for _ in range(count)]
+                elif strategy == 'text':
+                    pregenerated[elem.id] = [faker.sentence() for _ in range(count)]
                 else:
                     pregenerated[elem.id] = generate_unique_email_pool(count)
             else:

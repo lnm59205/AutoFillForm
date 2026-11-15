@@ -699,6 +699,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function detectDefaultStrategy(questionName, elemType) {
+        if (elemType === 'UserEmail') return 'email';
+        const q = (questionName || '').toLowerCase();
+        if (q.includes('email') || q.includes('gmail') || q.includes('thư điện tử') || q.includes('e-mail')) {
+            return 'email';
+        }
+        if (q.includes('doanh nghiệp') || q.includes('công ty') || q.includes('đơn vị') || q.includes('tổ chức')) {
+            return 'custom_list';
+        }
+        if (q.includes('sđt') || q.includes('điện thoại') || q.includes('zalo') || q.includes('phone') || q.includes('di động')) {
+            return 'vi_phone';
+        }
+        if (q.includes('mssv') || q.includes('msv') || q.includes('mã sinh viên') || q.includes('mã số sinh viên') || q.includes('mã sv')) {
+            return 'mssv';
+        }
+        if (q.includes('lớp') || q.includes('khoa') || q.includes('ngành') || q.includes('khóa')) {
+            return 'class_code';
+        }
+        if (q.includes('họ và tên') || q.includes('họ tên') || q.includes('tên của bạn') || q.includes('người trả lời') || q.includes('tên:') || q === 'tên' || q.includes('full name') || q.includes('name')) {
+            return 'vi_name';
+        }
+        if (q.includes('tuổi') || q.includes('năm sinh') || q.includes('age') || q.includes('số lượng')) {
+            return 'number';
+        }
+        if (q.includes('link') || q.includes('drive') || q.includes('minh chứng') || q.includes('url')) {
+            return 'custom_list';
+        }
+        return 'vi_name';
+    }
+
     // 4. RENDER DETAILED QUESTION CARDS (SCREENSHOT 3)
     function renderQuestions(formData) {
         questionsContainer.innerHTML = '';
@@ -740,14 +770,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Render dynamic choices in GRID style (Screenshot 3)
                 if (['Short', 'Paragraph', 'UserEmail'].includes(elem.type)) {
+                    const detectedStrategy = detectDefaultStrategy(elem.name, elem.type);
+                    const isListOrStatic = (detectedStrategy === 'custom_list' || detectedStrategy === 'static');
+                    const placeholderText = detectedStrategy === 'static'
+                        ? 'Nhập 1 giá trị cố định để điền giống nhau cho mọi lượt...'
+                        : 'Dán danh sách vào đây (Mỗi dòng là 1 tên người / 1 tên doanh nghiệp / 1 đáp án).\nVí dụ:\nCông ty Cổ phần FPT\nTập đoàn Viettel\nCông ty TNHH Samsung Việt Nam';
+                    const helperText = detectedStrategy === 'static'
+                        ? '📌 Mọi lượt chạy sẽ điền cùng giá trị cố định này.'
+                        : '📋 <strong>Mỗi lượt chạy sẽ lấy lần lượt 1 dòng</strong> từ trên xuống dưới (hỗ trợ dán danh sách tên người thật / tên doanh nghiệp từ Excel, Word, Notepad).';
+
                     innerHtml += `
                         <div class="strategy-select-container">
-                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-                                <i class="fa-solid fa-envelope" style="color: #38bdf8;"></i> Bộ sinh dữ liệu:
+                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                                <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i> Bộ sinh dữ liệu tự động:
                             </label>
-                            <select class="strategy-select" style="font-weight: 600; color: #34d399; background: rgba(15, 23, 42, 0.6); border-color: rgba(52, 211, 153, 0.3);">
-                                <option value="email" selected>Địa Chỉ Email Ngẫu Nhiên (@gmail.com chuẩn người thật)</option>
+                            <select class="strategy-select" onchange="handleStrategyChange(this)" style="font-weight: 600; color: #34d399; background: rgba(15, 23, 42, 0.6); border-color: rgba(52, 211, 153, 0.3);">
+                                <option value="custom_list" ${detectedStrategy === 'custom_list' ? 'selected' : ''}>📋 Danh Sách Tự Dán (Mỗi lượt chạy điền 1 dòng - Tên người / Doanh nghiệp...)</option>
+                                <option value="vi_name" ${detectedStrategy === 'vi_name' ? 'selected' : ''}>👤 Họ & Tên Người Thật (Tiếng Việt ngẫu nhiên, không trùng)</option>
+                                <option value="email" ${detectedStrategy === 'email' ? 'selected' : ''}>📧 Địa Chỉ Email Ngẫu Nhiên (@gmail.com chuẩn người thật)</option>
+                                <option value="vi_phone" ${detectedStrategy === 'vi_phone' ? 'selected' : ''}>📞 Số Điện Thoại VN (09x/03x/08x chuẩn 10 số)</option>
+                                <option value="mssv" ${detectedStrategy === 'mssv' ? 'selected' : ''}>🎓 Mã Số Sinh Viên (MSSV ngẫu nhiên chuẩn)</option>
+                                <option value="class_code" ${detectedStrategy === 'class_code' ? 'selected' : ''}>🏫 Lớp / Khoa (VD: K19 QTKD 4, K18 CNTT 2...)</option>
+                                <option value="number" ${detectedStrategy === 'number' ? 'selected' : ''}>🔢 Số Ngẫu Nhiên / Độ Tuổi (18 - 60)</option>
+                                <option value="text" ${detectedStrategy === 'text' ? 'selected' : ''}>📝 Văn Bản / Câu Trả Lời Ngắn Ngẫu Nhiên</option>
+                                <option value="static" ${detectedStrategy === 'static' ? 'selected' : ''}>📌 Giá Trị Cố Định (Điền giống nhau mọi lượt)</option>
                             </select>
+                            <div class="static-input-wrapper ${isListOrStatic ? '' : 'hidden'}" style="margin-top:10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                    <span class="custom-list-helper" style="font-size:11.5px; color:var(--text-muted);">${helperText}</span>
+                                    <span class="custom-list-counter ${detectedStrategy === 'static' ? 'hidden' : ''}" style="font-size:11px; font-weight:700; color:#38bdf8; background:rgba(56, 189, 248, 0.12); padding:2px 8px; border-radius:99px; white-space:nowrap;">Đã nhập: 0 dòng</span>
+                                </div>
+                                <textarea class="static-value-input" rows="${detectedStrategy === 'static' ? 2 : 5}" oninput="updateCustomListCount(this)" placeholder="${placeholderText}" style="width:100%; padding:10px 12px; border-radius:8px; background:rgba(15, 23, 42, 0.85); border:1px solid rgba(56, 189, 248, 0.35); color:var(--text-main); font-family:var(--font); font-size:13px; line-height:1.5; resize:vertical;"></textarea>
+                            </div>
                         </div>
                     `;
                 } else if (['Radio', 'Dropdown', 'Scale'].includes(elem.type)) {
@@ -852,8 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         formData.pages.forEach(page => {
             page.elements.forEach(elem => {
-                // Only choice questions require status tracking in the list
-                if (['Radio', 'Dropdown', 'Scale', 'Checkboxes', 'RadioGrid', 'CheckboxGrid'].includes(elem.type)) {
+                if (['Radio', 'Dropdown', 'Scale', 'Checkboxes', 'RadioGrid', 'CheckboxGrid', 'Short', 'Paragraph', 'UserEmail'].includes(elem.type)) {
                     const item = document.createElement('div');
                     item.className = 'checklist-item';
                     item.dataset.qId = elem.id;
@@ -862,9 +915,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (elem.type === 'Checkboxes') typeText = 'Hộp kiểm';
                     else if (elem.type === 'RadioGrid') typeText = 'Hàng Lựa chọn';
                     else if (elem.type === 'CheckboxGrid') typeText = 'Hàng Hộp kiểm';
+                    else if (['Short', 'Paragraph', 'UserEmail'].includes(elem.type)) typeText = 'Điền văn bản';
 
                     let iconHtml = `<i class="fa-solid fa-circle-exclamation checklist-item-status invalid"></i>`;
-                    if (elem.type === 'Checkboxes' || elem.type === 'CheckboxGrid') {
+                    if (['Checkboxes', 'CheckboxGrid', 'Short', 'Paragraph', 'UserEmail'].includes(elem.type)) {
                         iconHtml = `<i class="fa-solid fa-circle-check checklist-item-status valid"></i>`;
                     }
 
@@ -901,10 +955,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    window.updateCustomListCount = function(textareaElem) {
+        if (!textareaElem) return;
+        const wrapper = textareaElem.closest('.static-input-wrapper');
+        if (!wrapper) return;
+        const counter = wrapper.querySelector('.custom-list-counter');
+        if (!counter) return;
+        const raw = textareaElem.value || '';
+        let lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        if (lines.length === 1 && lines[0].includes(';')) {
+            lines = lines[0].split(';').map(s => s.trim()).filter(Boolean);
+        }
+        counter.textContent = `Đã nhập: ${lines.length} dòng`;
+    };
+
     window.handleStrategyChange = function(selectElem) {
         const staticWrapper = selectElem.nextElementSibling;
-        if (selectElem.value === 'static') {
+        if (!staticWrapper) return;
+        const helper = staticWrapper.querySelector('.custom-list-helper');
+        const counter = staticWrapper.querySelector('.custom-list-counter');
+        const textarea = staticWrapper.querySelector('.static-value-input');
+
+        if (selectElem.value === 'custom_list') {
             staticWrapper.classList.remove('hidden');
+            if (helper) {
+                helper.innerHTML = '📋 <strong>Mỗi lượt chạy sẽ lấy lần lượt 1 dòng</strong> từ trên xuống dưới (hỗ trợ dán danh sách tên người thật / tên doanh nghiệp từ Excel, Word, Notepad).';
+            }
+            if (counter) counter.classList.remove('hidden');
+            if (textarea) {
+                textarea.rows = 5;
+                textarea.placeholder = 'Dán danh sách vào đây (Mỗi dòng là 1 tên người / 1 tên doanh nghiệp / 1 đáp án).\nVí dụ:\nCông ty Cổ phần FPT\nTập đoàn Viettel\nCông ty TNHH Samsung Việt Nam';
+                window.updateCustomListCount(textarea);
+            }
+        } else if (selectElem.value === 'static') {
+            staticWrapper.classList.remove('hidden');
+            if (helper) {
+                helper.innerHTML = '📌 Mọi lượt chạy sẽ điền cùng giá trị cố định này.';
+            }
+            if (counter) counter.classList.add('hidden');
+            if (textarea) {
+                textarea.rows = 2;
+                textarea.placeholder = 'Nhập 1 giá trị cố định để điền giống nhau cho mọi lượt...';
+            }
         } else {
             staticWrapper.classList.add('hidden');
         }
@@ -1340,9 +1432,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         select.value = config.strategies[id];
                         handleStrategyChange(select);
                     }
-                    if (config.strategies[id] === 'static' && config.static_values && config.static_values[id]) {
+                    if ((config.strategies[id] === 'static' || config.strategies[id] === 'custom_list') && config.static_values && config.static_values[id]) {
                         const staticInput = qItem.querySelector('.static-value-input');
-                        if (staticInput) staticInput.value = config.static_values[id];
+                        if (staticInput) {
+                            staticInput.value = config.static_values[id];
+                            window.updateCustomListCount(staticInput);
+                        }
                     }
                 }
             });
@@ -1535,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const badge = qItem.querySelector('.sum-status-badge');
                     if (badge && badge.classList.contains('invalid')) {
                         validationFailed = true;
-                        invalidQuestionNames.push(qTitle);
+                        invalidQuestionNames.push(`${qTitle} (Chưa đủ 100%)`);
                     }
                 } else if (type === 'RadioGrid') {
                     const rows = qItem.querySelectorAll('.grid-row-container');
@@ -1544,14 +1639,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         const rowTitle = row.querySelector('.grid-row-title').textContent.trim();
                         if (sumDisplay && sumDisplay.classList.contains('sum-invalid')) {
                             validationFailed = true;
-                            invalidQuestionNames.push(`${qTitle} [${rowTitle}]`);
+                            invalidQuestionNames.push(`${qTitle} [${rowTitle}] (Chưa đủ 100%)`);
                         }
                     });
+                } else if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
+                    const select = qItem.querySelector('.strategy-select');
+                    const staticInput = qItem.querySelector('.static-value-input');
+                    if (select && select.value === 'custom_list') {
+                        const rawText = staticInput ? staticInput.value.trim() : '';
+                        if (!rawText) {
+                            validationFailed = true;
+                            invalidQuestionNames.push(`${qTitle} (Chưa dán danh sách dữ liệu)`);
+                        }
+                    }
                 }
             });
 
             if (validationFailed) {
-                alert(`⚠️ Không thể chạy chiến dịch!\n\nCác câu hỏi sau chưa đạt đủ 100%:\n- ${invalidQuestionNames.join('\n- ')}`);
+                alert(`⚠️ Không thể chạy chiến dịch!\n\nVui lòng kiểm tra các câu hỏi sau:\n- ${invalidQuestionNames.join('\n- ')}`);
                 return;
             }
 
