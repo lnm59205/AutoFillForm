@@ -701,32 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function detectDefaultStrategy(questionName, elemType) {
         if (elemType === 'UserEmail') return 'email';
-        const q = (questionName || '').toLowerCase();
-        if (q.includes('email') || q.includes('gmail') || q.includes('thư điện tử') || q.includes('e-mail')) {
-            return 'email';
-        }
-        if (q.includes('doanh nghiệp') || q.includes('công ty') || q.includes('đơn vị') || q.includes('tổ chức')) {
-            return 'custom_list';
-        }
-        if (q.includes('sđt') || q.includes('điện thoại') || q.includes('zalo') || q.includes('phone') || q.includes('di động')) {
-            return 'vi_phone';
-        }
-        if (q.includes('mssv') || q.includes('msv') || q.includes('mã sinh viên') || q.includes('mã số sinh viên') || q.includes('mã sv')) {
-            return 'mssv';
-        }
-        if (q.includes('lớp') || q.includes('khoa') || q.includes('ngành') || q.includes('khóa')) {
-            return 'class_code';
-        }
-        if (q.includes('họ và tên') || q.includes('họ tên') || q.includes('tên của bạn') || q.includes('người trả lời') || q.includes('tên:') || q === 'tên' || q.includes('full name') || q.includes('name')) {
-            return 'vi_name';
-        }
-        if (q.includes('tuổi') || q.includes('năm sinh') || q.includes('age') || q.includes('số lượng')) {
-            return 'number';
-        }
-        if (q.includes('link') || q.includes('drive') || q.includes('minh chứng') || q.includes('url')) {
-            return 'custom_list';
-        }
-        return 'vi_name';
+        return 'custom_list';
     }
 
     // 4. RENDER DETAILED QUESTION CARDS (SCREENSHOT 3)
@@ -774,28 +749,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     const isListOrStatic = (detectedStrategy === 'custom_list' || detectedStrategy === 'static');
                     const placeholderText = detectedStrategy === 'static'
                         ? 'Nhập 1 giá trị cố định để điền giống nhau cho mọi lượt...'
-                        : 'Dán danh sách vào đây (Mỗi dòng là 1 tên người / 1 tên doanh nghiệp / 1 đáp án).\nVí dụ:\nCông ty Cổ phần FPT\nTập đoàn Viettel\nCông ty TNHH Samsung Việt Nam';
+                        : 'Danh sách dữ liệu sẽ điền cho từng lượt chạy (Mỗi dòng = 1 lượt điền).\n• Bấm "✨ AI Sinh Dữ Liệu" ở trên để AI tự hiểu ngữ cảnh biểu mẫu và tạo dữ liệu.\n• Hoặc tự dán danh sách tên người thật / tên doanh nghiệp của bạn vào đây.';
                     const helperText = detectedStrategy === 'static'
                         ? '📌 Mọi lượt chạy sẽ điền cùng giá trị cố định này.'
-                        : '📋 <strong>Mỗi lượt chạy sẽ lấy lần lượt 1 dòng</strong> từ trên xuống dưới (hỗ trợ dán danh sách tên người thật / tên doanh nghiệp từ Excel, Word, Notepad).';
+                        : '📋 <strong>Dữ liệu sẽ điền (Mỗi dòng = 1 lượt chạy):</strong> Bạn có thể dùng AI tạo tự động ở trên, hoặc tự dán danh sách (tên người, tên doanh nghiệp...), hoặc chỉnh sửa trực tiếp.';
 
                     innerHtml += `
-                        <div class="strategy-select-container">
+                        <div class="strategy-select-container" data-q-name="${(elem.name || '').replace(/"/g, '&quot;')}" data-q-desc="${(elem.description || '').replace(/"/g, '&quot;')}">
                             <label style="font-size: 12px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-                                <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i> Bộ sinh dữ liệu tự động:
+                                <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i> Chế độ sinh dữ liệu văn bản:
                             </label>
                             <select class="strategy-select" onchange="handleStrategyChange(this)" style="font-weight: 600; color: #34d399; background: rgba(15, 23, 42, 0.6); border-color: rgba(52, 211, 153, 0.3);">
-                                <option value="custom_list" ${detectedStrategy === 'custom_list' ? 'selected' : ''}>📋 Danh Sách Tự Dán (Mỗi lượt chạy điền 1 dòng - Tên người / Doanh nghiệp...)</option>
-                                <option value="vi_name" ${detectedStrategy === 'vi_name' ? 'selected' : ''}>👤 Họ & Tên Người Thật (Tiếng Việt ngẫu nhiên, không trùng)</option>
+                                <option value="custom_list" ${detectedStrategy === 'custom_list' ? 'selected' : ''}>✨ AI Theo Ngữ Cảnh Biểu Mẫu / Danh Sách Tự Dán (Mỗi lượt điền 1 dòng)</option>
                                 <option value="email" ${detectedStrategy === 'email' ? 'selected' : ''}>📧 Địa Chỉ Email Ngẫu Nhiên (@gmail.com chuẩn người thật)</option>
+                                <option value="vi_name" ${detectedStrategy === 'vi_name' ? 'selected' : ''}>👤 Họ & Tên Người Thật (Tiếng Việt ngẫu nhiên, không trùng)</option>
                                 <option value="vi_phone" ${detectedStrategy === 'vi_phone' ? 'selected' : ''}>📞 Số Điện Thoại VN (09x/03x/08x chuẩn 10 số)</option>
-                                <option value="mssv" ${detectedStrategy === 'mssv' ? 'selected' : ''}>🎓 Mã Số Sinh Viên (MSSV ngẫu nhiên chuẩn)</option>
-                                <option value="class_code" ${detectedStrategy === 'class_code' ? 'selected' : ''}>🏫 Lớp / Khoa (VD: K19 QTKD 4, K18 CNTT 2...)</option>
-                                <option value="number" ${detectedStrategy === 'number' ? 'selected' : ''}>🔢 Số Ngẫu Nhiên / Độ Tuổi (18 - 60)</option>
-                                <option value="text" ${detectedStrategy === 'text' ? 'selected' : ''}>📝 Văn Bản / Câu Trả Lời Ngắn Ngẫu Nhiên</option>
                                 <option value="static" ${detectedStrategy === 'static' ? 'selected' : ''}>📌 Giá Trị Cố Định (Điền giống nhau mọi lượt)</option>
                             </select>
                             <div class="static-input-wrapper ${isListOrStatic ? '' : 'hidden'}" style="margin-top:10px;">
+                                <div class="question-ai-prompt-bar ${detectedStrategy === 'static' ? 'hidden' : ''}" style="display:flex; gap:8px; margin-bottom:10px; align-items:stretch;">
+                                    <div style="flex:1; position:relative; display:flex; align-items:center;">
+                                        <i class="fa-solid fa-robot" style="position:absolute; left:11px; color:#a78bfa; font-size:13px; pointer-events:none;"></i>
+                                        <input type="text" class="question-ai-prompt-input" placeholder="Prompt cho AI (VD: Sinh dữ liệu đúng mục đích câu này, hoặc để trống để AI tự hiểu theo tên Form)..." onkeydown="if(event.key==='Enter'){event.preventDefault(); generateQuestionTextByAI(this.parentElement.nextElementSibling);}" style="width:100%; padding:9px 12px 9px 32px; border-radius:8px; background:rgba(30, 27, 75, 0.55); border:1px solid rgba(167, 139, 250, 0.4); color:var(--text-main); font-size:12.5px;" />
+                                    </div>
+                                    <button type="button" class="btn btn-ai-action" onclick="generateQuestionTextByAI(this)" style="padding:0 14px; font-size:12.5px; white-space:nowrap; height:auto; min-height:36px;">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Sinh Dữ Liệu
+                                    </button>
+                                </div>
                                 <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
                                     <span class="custom-list-helper" style="font-size:11.5px; color:var(--text-muted);">${helperText}</span>
                                     <span class="custom-list-counter ${detectedStrategy === 'static' ? 'hidden' : ''}" style="font-size:11px; font-weight:700; color:#38bdf8; background:rgba(56, 189, 248, 0.12); padding:2px 8px; border-radius:99px; white-space:nowrap;">Đã nhập: 0 dòng</span>
@@ -972,23 +952,26 @@ document.addEventListener('DOMContentLoaded', () => {
     window.handleStrategyChange = function(selectElem) {
         const staticWrapper = selectElem.nextElementSibling;
         if (!staticWrapper) return;
+        const aiBar = staticWrapper.querySelector('.question-ai-prompt-bar');
         const helper = staticWrapper.querySelector('.custom-list-helper');
         const counter = staticWrapper.querySelector('.custom-list-counter');
         const textarea = staticWrapper.querySelector('.static-value-input');
 
         if (selectElem.value === 'custom_list') {
             staticWrapper.classList.remove('hidden');
+            if (aiBar) aiBar.classList.remove('hidden');
             if (helper) {
-                helper.innerHTML = '📋 <strong>Mỗi lượt chạy sẽ lấy lần lượt 1 dòng</strong> từ trên xuống dưới (hỗ trợ dán danh sách tên người thật / tên doanh nghiệp từ Excel, Word, Notepad).';
+                helper.innerHTML = '📋 <strong>Dữ liệu sẽ điền (Mỗi dòng = 1 lượt chạy):</strong> Bạn có thể dùng AI tạo tự động ở trên, hoặc tự dán danh sách (tên người, tên doanh nghiệp...), hoặc chỉnh sửa trực tiếp.';
             }
             if (counter) counter.classList.remove('hidden');
             if (textarea) {
                 textarea.rows = 5;
-                textarea.placeholder = 'Dán danh sách vào đây (Mỗi dòng là 1 tên người / 1 tên doanh nghiệp / 1 đáp án).\nVí dụ:\nCông ty Cổ phần FPT\nTập đoàn Viettel\nCông ty TNHH Samsung Việt Nam';
+                textarea.placeholder = 'Danh sách dữ liệu sẽ điền cho từng lượt chạy (Mỗi dòng = 1 lượt điền).\n• Bấm "✨ AI Sinh Dữ Liệu" ở trên để AI tự hiểu ngữ cảnh biểu mẫu và tạo dữ liệu.\n• Hoặc tự dán danh sách tên người thật / tên doanh nghiệp của bạn vào đây.';
                 window.updateCustomListCount(textarea);
             }
         } else if (selectElem.value === 'static') {
             staticWrapper.classList.remove('hidden');
+            if (aiBar) aiBar.classList.add('hidden');
             if (helper) {
                 helper.innerHTML = '📌 Mọi lượt chạy sẽ điền cùng giá trị cố định này.';
             }
@@ -999,6 +982,58 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             staticWrapper.classList.add('hidden');
+        }
+    };
+
+    window.generateQuestionTextByAI = async function(btnElem) {
+        if (!btnElem || !parsedForm) return;
+        const container = btnElem.closest('.strategy-select-container');
+        if (!container) return;
+
+        const qName = container.dataset.qName || 'Câu hỏi';
+        const qDesc = container.dataset.qDesc || '';
+        const qItem = btnElem.closest('.question-item');
+        const qType = qItem ? qItem.dataset.type : 'Short';
+        const promptInput = container.querySelector('.question-ai-prompt-input');
+        const textarea = container.querySelector('.static-value-input');
+        const userPrompt = promptInput ? promptInput.value.trim() : '';
+        const submissionsInput = document.getElementById('campaign-submissions');
+        const count = submissionsInput ? (parseInt(submissionsInput.value) || 20) : 20;
+
+        const origHtml = btnElem.innerHTML;
+        btnElem.disabled = true;
+        btnElem.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang tạo...`;
+
+        try {
+            const res = await fetch('/api/ai-generate-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    form_title: parsedForm.title || '',
+                    form_description: parsedForm.description || '',
+                    question_name: qName,
+                    question_description: qDesc,
+                    question_type: qType,
+                    prompt: userPrompt,
+                    count: count
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Lỗi khi gọi AI sinh dữ liệu.');
+            }
+            const items = data.items || [];
+            if (textarea && items.length > 0) {
+                textarea.value = items.join('\n');
+                window.updateCustomListCount(textarea);
+            }
+            addLog('system', `✨ AI đã sinh ${items.length} dòng dữ liệu cho câu "${qName}": ${data.summary || ''}`);
+        } catch (err) {
+            alert(`Lỗi AI: ${err.message}`);
+            addLog('error', `Lỗi AI sinh dữ liệu câu "${qName}": ${err.message}`);
+        } finally {
+            btnElem.disabled = false;
+            btnElem.innerHTML = origHtml;
         }
     };
 
@@ -1141,21 +1176,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const prompt = aiPromptInput ? aiPromptInput.value.trim() : '';
-            if (!prompt) {
-                alert("Vui lòng nhập nội dung yêu cầu chia tỷ lệ % vào ô prompt (hoặc chọn mẫu gợi ý bên dưới).");
-                if (aiPromptInput) aiPromptInput.focus();
-                return;
-            }
+            const submissionsInput = document.getElementById('campaign-submissions');
+            const count = submissionsInput ? (parseInt(submissionsInput.value) || 20) : 20;
 
-            // Extract questions from parsedForm
+            // Extract ALL questions (both choice and text) from parsedForm
             const questions = [];
             if (parsedForm.pages) {
                 parsedForm.pages.forEach(page => {
                     (page.elements || []).forEach(elem => {
-                        if (['Radio', 'Dropdown', 'Scale', 'Checkboxes', 'RadioGrid', 'CheckboxGrid'].includes(elem.type)) {
+                        if (['Radio', 'Dropdown', 'Scale', 'Checkboxes', 'RadioGrid', 'CheckboxGrid', 'Short', 'Paragraph', 'UserEmail'].includes(elem.type)) {
                             questions.push({
                                 id: String(elem.id),
                                 name: elem.name || 'Câu hỏi',
+                                description: elem.description || '',
                                 type: elem.type,
                                 choices: elem.choices || [],
                                 has_other: !!elem.has_other,
@@ -1167,7 +1200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (questions.length === 0) {
-                alert("Biểu mẫu này không có câu hỏi trắc nghiệm hoặc bảng nào để phân bổ tỷ lệ %.");
+                alert("Biểu mẫu này không có câu hỏi nào để AI phân tích.");
                 return;
             }
 
@@ -1186,6 +1219,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         prompt: prompt,
+                        form_title: parsedForm.title || '',
+                        form_description: parsedForm.description || '',
+                        count: count,
                         questions: questions
                     })
                 });
@@ -1196,13 +1232,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const dist = data.distribution || {};
+                const textSamples = data.text_samples || {};
                 let updatedCount = 0;
 
-                // Apply distributed percentages to DOM inputs
+                // Apply distributed percentages and text samples to DOM inputs
                 const qItems = document.querySelectorAll('.question-item');
                 qItems.forEach(qItem => {
                     const id = String(qItem.dataset.id);
                     const type = qItem.dataset.type;
+
+                    if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
+                        const samples = textSamples[id];
+                        if (Array.isArray(samples) && samples.length > 0) {
+                            const select = qItem.querySelector('.strategy-select');
+                            const textarea = qItem.querySelector('.static-value-input');
+                            if (select) {
+                                select.value = 'custom_list';
+                                window.handleStrategyChange(select);
+                            }
+                            if (textarea) {
+                                textarea.value = samples.join('\n');
+                                window.updateCustomListCount(textarea);
+                            }
+                            updatedCount++;
+                        }
+                        return;
+                    }
+
                     const qDist = dist[id];
                     if (!qDist) return;
 
@@ -1240,14 +1296,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 updateAllSums();
 
-                const summaryText = data.summary || "Đã phân tích prompt và phân bổ % chuẩn xác 100%!";
+                const summaryText = data.summary || "Đã phân tích ngữ cảnh biểu mẫu, chia % và tạo dữ liệu thành công!";
                 if (aiStatusMsg) {
                     aiStatusMsg.className = 'ai-status-msg success';
                     aiStatusMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Thành công:</strong> ${summaryText} (Đã cập nhật ${updatedCount} câu hỏi).`;
                     aiStatusMsg.classList.remove('hidden');
                 }
 
-                addLog("system", `✨ Groq AI: "${summaryText}" - Đã cập nhật ${updatedCount} câu hỏi chuẩn 100%.`);
+                addLog("system", `✨ Groq AI: "${summaryText}" - Đã cập nhật ${updatedCount} câu hỏi.`);
 
             } catch (err) {
                 if (aiStatusMsg) {
@@ -1642,16 +1698,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             invalidQuestionNames.push(`${qTitle} [${rowTitle}] (Chưa đủ 100%)`);
                         }
                     });
-                } else if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
-                    const select = qItem.querySelector('.strategy-select');
-                    const staticInput = qItem.querySelector('.static-value-input');
-                    if (select && select.value === 'custom_list') {
-                        const rawText = staticInput ? staticInput.value.trim() : '';
-                        if (!rawText) {
-                            validationFailed = true;
-                            invalidQuestionNames.push(`${qTitle} (Chưa dán danh sách dữ liệu)`);
-                        }
-                    }
                 }
             });
 
@@ -1673,10 +1719,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
                     const select = qItem.querySelector('.strategy-select');
                     const staticInput = qItem.querySelector('.static-value-input');
+                    const aiPromptEl = qItem.querySelector('.question-ai-prompt-input');
                     config[id] = {
                         type: type,
-                        strategy: select ? select.value : 'email',
-                        static_value: staticInput ? staticInput.value : ''
+                        strategy: select ? select.value : 'custom_list',
+                        static_value: staticInput ? staticInput.value : '',
+                        ai_prompt: aiPromptEl ? aiPromptEl.value.trim() : ''
                     };
                 } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
                     const choiceRows = qItem.querySelectorAll('.choice-row');

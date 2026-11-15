@@ -264,17 +264,17 @@
                                                 <div class="ai-title">
                                                     <i class="fa-solid fa-wand-magic-sparkles ai-sparkle-icon"></i>
                                                     <div>
-                                                        <strong>Trợ Lý Phân Bổ Tỷ Lệ % Bằng AI (Groq LPU)</strong>
-                                                        <span class="ai-badge">Siêu tốc độ & Tự động chuẩn hóa 100%</span>
+                                                        <strong>Trợ Lý AI Phân Bổ Tỷ Lệ % & Sinh Dữ Liệu Văn Bản Theo Ngữ Cảnh (Groq LPU)</strong>
+                                                        <span class="ai-badge">Tự hiểu mục đích Form • Chia % chuẩn 100% & Tạo câu trả lời tự luận</span>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div class="ai-assistant-body">
                                                 <div class="ai-prompt-wrapper">
-                                                    <textarea id="ai-prompt-input" rows="2" placeholder="Nhập yêu cầu phân bổ mong muốn bằng lời văn tiếng Việt (Ví dụ: 80% sinh viên năm 3-4, đa số rất hài lòng với chất lượng đào tạo, học phí thấy hơi cao, cơ sở vật chất khen nhiều...)"></textarea>
+                                                    <textarea id="ai-prompt-input" rows="2" placeholder="Nhập yêu cầu cho toàn bộ biểu mẫu (VD: Điểm danh sinh viên ĐH Phenikaa khóa K18-K20 / Khảo sát doanh nghiệp xuất khẩu, đa số đánh giá rất hài lòng...) hoặc để trống rồi bấm nút để AI tự hiểu theo tên Form!"></textarea>
                                                     <button id="btn-ai-distribute" class="btn btn-ai-action" type="button">
-                                                        <span id="btn-ai-text"><i class="fa-solid fa-bolt"></i> AI Chia % Ngay</span>
+                                                        <span id="btn-ai-text"><i class="fa-solid fa-bolt"></i> AI Phân Tích & Tạo Dữ Liệu</span>
                                                         <span id="btn-ai-spinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang phân tích...</span>
                                                     </button>
                                                 </div>
@@ -282,10 +282,10 @@
                                                 <!-- Quick Prompt Recommendation Chips -->
                                                 <div class="ai-quick-prompts">
                                                     <span class="ai-chip-label"><i class="fa-solid fa-lightbulb"></i> Gợi ý prompt:</span>
-                                                    <button type="button" class="ai-chip" data-prompt="Đa số đánh giá rất hài lòng và tích cực (khoảng 80-90%), rất ít ý kiến tiêu cực.">👍 Hài lòng cao (Tích cực)</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Khảo sát sinh viên: 70% là sinh viên năm 3 và năm 4, đánh giá chất lượng tốt nhưng học phí hơi cao.">🎓 Sinh viên năm 3-4</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Đánh giá khách quan, cân bằng: mức hài lòng và bình thường chiếm đa số, phân bổ đều tự nhiên.">⚖️ Khách quan, cân bằng</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Nhiều phản ánh cần cải thiện: mức độ chưa hài lòng và bình thường chiếm tỷ lệ cao hơn.">👎 Góp ý, cần cải thiện</button>
+                                                    <button type="button" class="ai-chip" data-prompt=" Tự động phân tích tiêu đề và câu hỏi của biểu mẫu này để sinh dữ liệu điền văn bản và chia tỷ lệ % sát thực tế nhất.">🤖 Tự hiểu theo ngữ cảnh Form</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Đa số đánh giá rất hài lòng và tích cực (khoảng 80-90%), câu hỏi tự luận điền thông tin thực tế và nhận xét khen ngợi tự nhiên.">👍 Hài lòng cao (Tích cực)</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Đối tượng là sinh viên đại học (khóa K18, K19, K20), điền đầy đủ Họ tên, MSSV, Lớp/Khoa hợp lý và đánh giá khách quan.">🎓 Khảo sát / Điểm danh Sinh viên</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Đối tượng là các doanh nghiệp, công ty thực tế tại Việt Nam, trả lời chuyên nghiệp và khách quan.">🏢 Khảo sát Doanh nghiệp</button>
                                                 </div>
 
                                                 <div id="ai-status-msg" class="ai-status-msg hidden"></div>
@@ -412,6 +412,6 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=1.5"></script>
+    <script src="/static/js/app.js?v=1.6"></script>
 </body>
 </html>

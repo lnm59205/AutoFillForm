@@ -514,6 +514,55 @@ def parse_custom_list_values(raw_text):
         lines = [item.strip() for item in lines[0].split(';') if item.strip()]
     return lines
 
+def generate_ai_text_pool_for_question(form_title, form_description, q_name, q_desc, q_type, user_prompt, count, custom_key=None):
+    """
+    Uses Groq AI to generate context-aware realistic answers for a Short/Paragraph/UserEmail question
+    based on the form's title, description, question title, and user prompt.
+    """
+    api_key = get_groq_api_key(custom_key)
+    if not api_key:
+        raise Exception("Chưa có Groq API Key hợp lệ.")
+
+    target_count = min(max(int(count or 15), 10), 50)
+    system_prompt = (
+        "Bạn là chuyên gia tạo dữ liệu khảo sát thực tế bằng tiếng Việt cho biểu mẫu Google Form.\n"
+        "Nhiệm vụ của bạn là đọc kỹ Tiêu đề biểu mẫu, Mô tả biểu mẫu, Tên câu hỏi và Yêu cầu của người dùng (Prompt), "
+        "từ đó hiểu chính xác mục đích của biểu mẫu và sinh ra danh sách các câu trả lời tự nhiên như người thật điền.\n\n"
+        "QUY TẮC BẮT BUỘC:\n"
+        f"1. Sinh đúng {target_count} câu trả lời KHÁC NHAU, đa dạng, tự nhiên, sát 100% với ngữ cảnh biểu mẫu và định dạng câu hỏi yêu cầu.\n"
+        "2. Nếu câu hỏi có ví dụ mẫu (như 'VD: K19 QTKD 4', 'gắn link ảnh GG DRIVE', 'MSSV', 'Tên doanh nghiệp'...): phải tuân thủ chuẩn xác định dạng đó và phù hợp với trường/tổ chức/ngành nghề trong tiêu đề biểu mẫu.\n"
+        "3. Nếu câu hỏi là Họ và tên: sinh họ và tên người Việt có dấu đầy đủ, đa dạng cả nam và nữ.\n"
+        "4. Nếu câu hỏi là SĐT/Zalo: sinh số điện thoại di động Việt Nam 10 chữ số hợp lệ (09x, 03x, 08x, 07x).\n"
+        "5. Nếu câu hỏi là Email: sinh email người thật (@gmail.com) viết liền không dấu.\n"
+        "6. Nếu câu hỏi là Tên doanh nghiệp / Công ty: sinh tên các doanh nghiệp/công ty thực tế tại Việt Nam phù hợp với lĩnh vực khảo sát.\n"
+        "7. Nếu là câu hỏi tự luận / ý kiến đóng góp: sinh các câu trả lời tự nhiên, đa dạng độ dài và cách diễn đạt của người thật.\n"
+        "8. CHỈ trả về JSON object thuần túy theo cấu trúc:\n"
+        "{\n"
+        '  "summary": "Mô tả ngắn 1 câu về bộ dữ liệu vừa sinh",\n'
+        '  "items": ["Câu trả lời 1", "Câu trả lời 2", "..."]\n'
+        "}"
+    )
+
+    user_msg = (
+        f"Thông tin ngữ cảnh biểu mẫu:\n"
+        f"- Tiêu đề biểu mẫu: {form_title or 'Không rõ'}\n"
+        f"- Mô tả biểu mẫu: {form_description or 'Không có'}\n\n"
+        f"Câu hỏi cần sinh dữ liệu:\n"
+        f"- Tên câu hỏi: {q_name}\n"
+        f"- Mô tả câu hỏi: {q_desc or 'Không có'}\n"
+        f"- Loại ô nhập: {q_type}\n"
+        f"- Yêu cầu của người dùng (Prompt): {user_prompt if user_prompt else 'Tự động suy luận theo ngữ cảnh biểu mẫu và tên câu hỏi để sinh dữ liệu chuẩn xác nhất.'}\n"
+        f"- Số lượng mẫu cần sinh: {target_count}"
+    )
+
+    ai_res = query_groq_ai(api_key, system_prompt, user_msg)
+    items = ai_res.get('items', [])
+    if not isinstance(items, list):
+        items = []
+    cleaned_items = [str(x).strip() for x in items if str(x).strip()]
+    summary = ai_res.get('summary', f'Đã sinh {len(cleaned_items)} mẫu dữ liệu theo ngữ cảnh biểu mẫu.')
+    return cleaned_items, summary
+
 def backend_fuzzy_match(s1, s2):
     if s1 is None or s2 is None:
         return False
@@ -1110,6 +1159,20 @@ def pregenerate_campaign_answers(form, fields_config, count):
                 strategy = config_field.get('strategy', 'email')
                 if strategy == 'custom_list':
                     items = parse_custom_list_values(config_field.get('static_value', ''))
+                    if not items:
+                        try:
+                            ai_prompt_val = config_field.get('ai_prompt', '')
+                            items, _ = generate_ai_text_pool_for_question(
+                                form.title or '',
+                                form.description or '',
+                                elem.name or '',
+                                elem.description or '',
+                                elem_class,
+                                ai_prompt_val,
+                                count
+                            )
+                        except Exception:
+                            items = []
                     if items:
                         pregenerated[elem.id] = [items[i % len(items)] for i in range(count)]
                     else:
@@ -1295,15 +1358,51 @@ def parse_form():
     except Exception as e:
         return jsonify({"error": f"Không thể phân tích biểu mẫu: {str(e)}"}), 500
 
+@app.route('/api/ai-generate-text', methods=['POST'])
+def ai_generate_text():
+    data = request.json or {}
+    form_title = data.get('form_title', '').strip()
+    form_description = data.get('form_description', '').strip()
+    question_name = data.get('question_name', '').strip()
+    question_description = data.get('question_description', '').strip()
+    question_type = data.get('question_type', 'Short').strip()
+    user_prompt = data.get('prompt', '').strip()
+    count = int(data.get('count', 20) or 20)
+    custom_key = data.get('custom_api_key', '')
+
+    if not question_name:
+        return jsonify({"error": "Thiếu tên câu hỏi cần sinh dữ liệu."}), 400
+
+    try:
+        items, summary = generate_ai_text_pool_for_question(
+            form_title,
+            form_description,
+            question_name,
+            question_description,
+            question_type,
+            user_prompt,
+            count,
+            custom_key
+        )
+        return jsonify({
+            "success": True,
+            "summary": summary,
+            "items": items
+        })
+    except Exception as e:
+        return jsonify({"error": f"Lỗi Groq AI: {str(e)}"}), 500
+
+
 @app.route('/api/ai-distribute', methods=['POST'])
 def ai_distribute():
     data = request.json or {}
     prompt = data.get('prompt', '').strip()
     questions = data.get('questions', [])
+    form_title = data.get('form_title', '').strip()
+    form_description = data.get('form_description', '').strip()
+    sample_count = min(max(int(data.get('count', 15) or 15), 10), 35)
     custom_key = data.get('custom_api_key', '')
     
-    if not prompt:
-        return jsonify({"error": "Vui lòng nhập nội dung prompt yêu cầu cho AI."}), 400
     if not questions:
         return jsonify({"error": "Không có danh sách câu hỏi nào để phân bổ."}), 400
         
@@ -1316,6 +1415,7 @@ def ai_distribute():
     for q in questions:
         q_id = str(q.get('id', ''))
         q_name = q.get('name', '')
+        q_desc = q.get('description', '')
         q_type = q.get('type', '')
         q_choices = list(q.get('choices') or [])
         if q.get('has_other') and '__other_option__' not in q_choices and 'Mục khác' not in q_choices:
@@ -1324,24 +1424,24 @@ def ai_distribute():
         formatted_questions.append({
             'id': q_id,
             'title': q_name,
+            'description': q_desc,
             'type': q_type,
             'choices': q_choices,
             'rows': q_rows
         })
         
     system_prompt = (
-        "Bạn là một chuyên gia phân tích dữ liệu khảo sát và biểu mẫu Google Form.\n"
-        "Nhiệm vụ của bạn là phân tích prompt yêu cầu của người dùng và các câu hỏi trong khảo sát, "
-        "sau đó gán tỷ lệ phần trăm (số nguyên từ 0 đến 100) cho từng lựa chọn của các câu hỏi sao cho sát nhất với prompt.\n\n"
-        "QUY TẮC BẮT BUỘC:\n"
-        "1. Với câu hỏi lựa chọn đơn (Radio, Dropdown, Scale) và từng dòng của RadioGrid: Tổng % các lựa chọn PHẢI BẰNG ĐÚNG 100.\n"
+        "Bạn là một chuyên gia phân tích dữ liệu khảo sát và tạo dữ liệu biểu mẫu Google Form thực tế tại Việt Nam.\n"
+        "Nhiệm vụ của bạn là đọc kỹ Tiêu đề biểu mẫu, Mô tả biểu mẫu, Prompt yêu cầu của người dùng và danh sách câu hỏi, sau đó:\n"
+        "1. Với câu hỏi lựa chọn đơn (Radio, Dropdown, Scale) và từng dòng của RadioGrid: Gán tỷ lệ % (số nguyên 0-100) sao cho tổng % các lựa chọn PHẢI BẰNG ĐÚNG 100.\n"
         "2. Với câu hỏi nhiều lựa chọn (Checkboxes, CheckboxGrid): Mỗi lựa chọn là một xác suất độc lập (0-100%).\n"
-        "3. Nếu prompt không nhắc đến một câu hỏi nào đó: Hãy suy luận hợp lý theo ngữ cảnh tổng thể (ví dụ: prompt là khen/hài lòng thì đánh giá chất lượng nên 70-90% ở mức tốt/hài lòng).\n"
-        "4. ĐỊNH DẠNG TRẢ VỀ: CHỈ trả về JSON object thuần túy với cấu trúc:\n"
+        f"3. Với câu hỏi điền văn bản (Short, Paragraph, UserEmail): Hiểu mục đích của biểu mẫu và câu hỏi để sinh ra danh sách {sample_count} câu trả lời mẫu KHÁC NHAU, tự nhiên như người thật điền, đúng định dạng yêu cầu (VD: Họ tên người Việt có dấu, MSSV phù hợp trường, Lớp/Khoa đúng ví dụ mẫu như 'K19 QTKD 4', SĐT 10 số VN, Email @gmail.com, Tên doanh nghiệp thật tại VN, hoặc câu trả lời tự luận sát chủ đề).\n"
+        "4. Nếu người dùng không nhập prompt cụ thể cho câu nào, hãy tự động suy luận hợp lý theo Tiêu đề & Mô tả biểu mẫu.\n"
+        "5. ĐỊNH DẠNG TRẢ VỀ: CHỈ trả về JSON object thuần túy với cấu trúc:\n"
         "{\n"
-        '  "summary": "Tóm tắt 1 câu về cách phân bổ vừa áp dụng",\n'
+        '  "summary": "Tóm tắt 1 câu về cách phân bổ % và bộ dữ liệu văn bản vừa sinh",\n'
         '  "distribution": {\n'
-        '    "<question_id>": {\n'
+        '    "<choice_question_id>": {\n'
         '      "<choice_name>": 70,\n'
         '      "<choice_name_2>": 30\n'
         "    },\n"
@@ -1351,13 +1451,20 @@ def ai_distribute():
         '        "<choice_name_2>": 20\n'
         "      }\n"
         "    }\n"
+        "  },\n"
+        '  "text_samples": {\n'
+        '    "<text_question_id>": ["Câu trả lời thực tế 1", "Câu trả lời thực tế 2", "..."]\n'
         "  }\n"
         "}"
     )
 
+    effective_prompt = prompt if prompt else "Hãy tự động phân tích ngữ cảnh biểu mẫu và sinh dữ liệu/tỷ lệ % hợp lý, tự nhiên nhất như người thật khảo sát."
     user_prompt = (
-        f"Prompt yêu cầu của người dùng:\n\"\"\"\n{prompt}\n\"\"\"\n\n"
-        f"Danh sách các câu hỏi cần phân bổ:\n{json.dumps(formatted_questions, ensure_ascii=False, indent=2)}"
+        f"Ngữ cảnh biểu mẫu:\n"
+        f"- Tiêu đề biểu mẫu: {form_title or 'Không rõ'}\n"
+        f"- Mô tả biểu mẫu: {form_description or 'Không có'}\n\n"
+        f"Prompt yêu cầu của người dùng:\n\"\"\"\n{effective_prompt}\n\"\"\"\n\n"
+        f"Danh sách các câu hỏi trong biểu mẫu:\n{json.dumps(formatted_questions, ensure_ascii=False, indent=2)}"
     )
 
     try:
@@ -1365,10 +1472,14 @@ def ai_distribute():
     except Exception as e:
         return jsonify({"error": f"Lỗi Groq AI: {str(e)}"}), 500
 
-    raw_dist = ai_result.get('distribution', ai_result)
-    summary = ai_result.get('summary', 'Đã tự động phân tích và phân bổ tỷ lệ % theo prompt.')
+    raw_dist = ai_result.get('distribution', ai_result if isinstance(ai_result, dict) else {})
+    raw_text_samples = ai_result.get('text_samples', {})
+    if not isinstance(raw_text_samples, dict):
+        raw_text_samples = {}
+    summary = ai_result.get('summary', 'Đã tự động phân tích ngữ cảnh biểu mẫu, chia tỷ lệ % và sinh dữ liệu văn bản.')
 
     normalized_dist = {}
+    normalized_text_samples = {}
     for q in questions:
         q_id = str(q.get('id', ''))
         q_name = q.get('name', '')
@@ -1377,6 +1488,23 @@ def ai_distribute():
         if q.get('has_other') and '__other_option__' not in choices and 'Mục khác' not in choices:
             choices.append('Mục khác')
         rows = list(q.get('rows') or [])
+
+        if q_type in ['Short', 'Paragraph', 'UserEmail']:
+            t_list = None
+            if q_id in raw_text_samples:
+                t_list = raw_text_samples[q_id]
+            elif q_id in raw_dist and isinstance(raw_dist[q_id], list):
+                t_list = raw_dist[q_id]
+            else:
+                for k, v in raw_text_samples.items():
+                    if backend_fuzzy_match(str(k), q_name) or backend_fuzzy_match(q_name, str(k)):
+                        t_list = v
+                        break
+            if isinstance(t_list, list):
+                cleaned = [str(item).strip() for item in t_list if str(item).strip()]
+                if cleaned:
+                    normalized_text_samples[q_id] = cleaned
+            continue
 
         # Find in raw_dist by id or fuzzy title
         q_raw_data = None
@@ -1415,7 +1543,8 @@ def ai_distribute():
     return jsonify({
         "success": True,
         "summary": summary,
-        "distribution": normalized_dist
+        "distribution": normalized_dist,
+        "text_samples": normalized_text_samples
     })
 
 @app.route('/api/start', methods=['POST'])
