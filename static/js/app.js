@@ -18,6 +18,183 @@ function fuzzyMatch(str1, str2) {
     return c1.includes(c2) || c2.includes(c1);
 }
 
+// Helpers for compact v2 CONFIG_ encoding/decoding
+const STRATEGY_TO_CODE = {
+    custom_list: 200,
+    email: 201,
+    vi_name: 202,
+    vi_phone: 203,
+    static: 204
+};
+
+const CODE_TO_STRATEGY = {
+    200: 'custom_list',
+    201: 'email',
+    202: 'vi_name',
+    203: 'vi_phone',
+    204: 'static'
+};
+
+function bytesToB64Url(bytes) {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function b64UrlToBytes(b64url) {
+    let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4 !== 0) {
+        b64 += '=';
+    }
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return Array.from(bytes);
+}
+
+function utf8ToB64Url(str) {
+    return btoa(unescape(encodeURIComponent(str)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+}
+
+function b64UrlToUtf8(b64url) {
+    let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4 !== 0) {
+        b64 += '=';
+    }
+    return decodeURIComponent(escape(atob(b64)));
+}
+
+function shortenFormUrl(rawUrl) {
+    const u = (rawUrl || '').trim();
+    let m = u.match(/\/forms\/d\/e\/1FAIpQL([a-zA-Z0-9_-]+)/);
+    if (m) return 'e.' + m[1];
+    m = u.match(/\/forms\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) return 'd.' + m[1];
+    m = u.match(/forms\.gle\/([a-zA-Z0-9_-]+)/);
+    if (m) return 'g.' + m[1];
+    return 'u.' + utf8ToB64Url(u);
+}
+
+function expandShortFormUrl(shortToken) {
+    if (!shortToken) return '';
+    if (shortToken.startsWith('e.')) {
+        return 'https://docs.google.com/forms/d/e/1FAIpQL' + shortToken.slice(2) + '/viewform';
+    }
+    if (shortToken.startsWith('d.')) {
+        return 'https://docs.google.com/forms/d/' + shortToken.slice(2) + '/viewform';
+    }
+    if (shortToken.startsWith('g.')) {
+        return 'https://forms.gle/' + shortToken.slice(2);
+    }
+    if (shortToken.startsWith('u.')) {
+        return b64UrlToUtf8(shortToken.slice(2));
+    }
+    return shortToken;
+}
+
+function encodeShortConfigCode(formUrl, submissions, delay) {
+    const shortUrl = shortenFormUrl(formUrl);
+    const qItems = document.querySelectorAll('.question-item');
+    const bytes = [];
+    const customTexts = {};
+
+    qItems.forEach((qItem, idx) => {
+        const type = qItem.dataset.type;
+        if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
+            const select = qItem.querySelector('.strategy-select');
+            const stratVal = select ? select.value : 'custom_list';
+            bytes.push(STRATEGY_TO_CODE[stratVal] || 200);
+            bytes.push(254);
+
+            const staticInput = qItem.querySelector('.static-value-input');
+            if (staticInput && staticInput.value.trim()) {
+                customTexts[idx] = staticInput.value;
+            }
+        } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
+            const inputs = qItem.querySelectorAll('.choice-percent-input');
+            inputs.forEach(inp => {
+                const v = Math.max(0, Math.min(100, parseInt(inp.value) || 0));
+                bytes.push(v);
+            });
+            bytes.push(254);
+        } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
+            const rows = qItem.querySelectorAll('.grid-row-container');
+            rows.forEach((row, rIdx) => {
+                if (rIdx > 0) bytes.push(253);
+                const inputs = row.querySelectorAll('.choice-percent-input');
+                inputs.forEach(inp => {
+                    const v = Math.max(0, Math.min(100, parseInt(inp.value) || 0));
+                    bytes.push(v);
+                });
+            });
+            bytes.push(254);
+        }
+    });
+
+    const pctB64 = bytesToB64Url(bytes);
+    let code = `CONFIG_2_${shortUrl}~${submissions}~${delay}~${pctB64}`;
+    if (Object.keys(customTexts).length > 0) {
+        code += `~${utf8ToB64Url(JSON.stringify(customTexts))}`;
+    }
+    return code;
+}
+
+function decodeAnyConfigCode(rawInput) {
+    const trimmed = (rawInput || '').trim();
+
+    // 1. New compact format: CONFIG_2_...
+    if (trimmed.startsWith('CONFIG_2_')) {
+        const body = trimmed.slice('CONFIG_2_'.length);
+        const parts = body.split('~');
+        if (parts.length < 4) {
+            throw new Error('Mã cấu hình ngắn không đúng định dạng.');
+        }
+        const [uPart, subStr, delayStr, pctB64, textB64] = parts;
+        const url = expandShortFormUrl(uPart);
+        const rawBytes = b64UrlToBytes(pctB64);
+
+        const qSegments = [];
+        let currentSeg = [];
+        for (let i = 0; i < rawBytes.length; i++) {
+            if (rawBytes[i] === 254) {
+                qSegments.push(currentSeg);
+                currentSeg = [];
+            } else {
+                currentSeg.push(rawBytes[i]);
+            }
+        }
+        if (currentSeg.length > 0) {
+            qSegments.push(currentSeg);
+        }
+
+        const customTexts = textB64 ? JSON.parse(b64UrlToUtf8(textB64)) : {};
+        return {
+            version: 2,
+            url: url,
+            submissions: parseInt(subStr) || 10,
+            delay: parseFloat(delayStr) || 1.0,
+            qSegments: qSegments,
+            customTexts: customTexts
+        };
+    }
+
+    // 2. Legacy long format: CONFIG_eyJ...
+    if (trimmed.startsWith('CONFIG_')) {
+        const b64Part = trimmed.slice('CONFIG_'.length).replace(/-/g, '+').replace(/_/g, '/');
+        const jsonStr = decodeURIComponent(escape(atob(b64Part)));
+        return JSON.parse(jsonStr);
+    }
+
+    throw new Error('Mã cấu hình không hợp lệ.');
+}
+
 const defaultPercentagesMap = {
     "bantuocnhomnaosauday": {
         "sinhviendaihocphenikaa": 55,
@@ -47,276 +224,6 @@ const defaultPercentagesMap = {
         "nam3": 40,
         "nam4": 30,
         "khac": 0
-    },
-    "trungbinhmoingaybansudungdienthoaithongminhmaytinhlaptop": {
-        "duoi2gio": 1,
-        "24gio": 4,
-        "46gio": 10,
-        "68gio": 35,
-        "tren8gio": 50
-    },
-    "banthuongsudungthietbidientuvaothoidiemnaotrongngay": {
-        "sang": 60,
-        "buoitrua": 70,
-        "buoichieu": 80,
-        "buoitoi": 85,
-        "sau22gio": 75,
-        "truockhidingu": 80
-    },
-    "banthuongsudungdienthoaihoacmaytinhtrongvong1giotruockhidingu": {
-        "gannhukhongbaogio": 2,
-        "hiemkhi": 3,
-        "thinthoang": 10,
-        "thuongxuyen": 25,
-        "gannhumoingay": 60
-    },
-    "saukhisudungdienthoaihoacmaytinhtrongthoigiandaibancongthuo": {
-        "khongbaogio": 1,
-        "hiemkhi": 4,
-        "thinthoang": 10,
-        "gannhumoingay": 30,
-        "thuongxuyen": 55
-    },
-    "banthuonggapnhungbieuhiennaosaudaysauthoigiansudungthietbi": {
-        "camgiacmoimat": 85,
-        "camgiackhomat": 65,
-        "camgiacnanghoackhachiuquanhmat": 45,
-        "nhucdau": 40,
-        "khotaptrung": 45,
-        "muonnhammathoacnghimat": 75,
-        "camgiaccangthangmetmoi": 50,
-        "khonggapbieuhiennao": 1,
-        "muckhac": 2,
-        "khac": 2
-    },
-    "mucdokhoachiuomatcuabansaumotngaysudungthietbidientuthuong": {
-        "1hoantoankhongkhoachiu": 2,
-        "1": 2,
-        "2khoachiunhe": 8,
-        "2": 8,
-        "3khoachiuvoiphai": 35,
-        "3": 35,
-        "4khoachiunhieu": 45,
-        "4": 45,
-        "5ratkhoachiu": 10,
-        "5": 10
-    },
-    "banthuongcamthaykhoachiuomatvaothoidiemnao": {
-        "buoisang": 10,
-        "buoichieu": 35,
-        "buoitoi": 60,
-        "saukhihoctaplamviecnhieugio": 80,
-        "truockhidingu": 70,
-        "khongcothoidiemcuthe": 2,
-        "khac": 1
-    },
-    "bancothuongcamthaykhothugiansaumotngayhoctaplamviec": {
-        "khongbaogio": 1,
-        "hiemkhi": 4,
-        "thinthoang": 20,
-        "thuongxuyen": 50,
-        "gannhumoingay": 25
-    },
-    "bancothuongsudungthietbidientungaytruockhingu": {
-        "khongbaogio": 1,
-        "hiemkhi": 4,
-        "thinthoang": 10,
-        "thuongxuyen": 25,
-        "gannhumoingay": 60
-    },
-    "khicamthaymoimathoaccanthugiansauthoigiansudungthietbi": {
-        "nhammatnghimat": 70,
-        "ngu": 45,
-        "ruamat": 30,
-        "uongnuoc": 25,
-        "sudungthuocnhomat": 50,
-        "dapmatnamat": 10,
-        "sudungtuichuom": 5,
-        "sudungmatnamatlamam": 12,
-        "massagemat": 35,
-        "dispagoidauduongsinh": 8,
-        "khonglamgi": 5,
-        "muckhac": 2,
-        "khac": 2
-    },
-    "bandatungsudungsanphamchuommatmatnamathoacsanpham": {
-        "datungsudung": 45,
-        "chuatungsudung": 55
-    },
-    "neudatungsudungbanthuongsudungsanphamnao": {
-        "tuichuommat": 15,
-        "matnamatlamamdungmotlandung": 50,
-        "matnamatlamamdungmotlan": 50,
-        "tuichuomdien": 15,
-        "matnamatthuong": 20,
-        "matnamatthuongthuong": 20,
-        "chuatungsudung": 0
-    },
-    "banthuongsudungnhungsanphamtrevoitansuatnhuthenao": {
-        "haumukhongsudung": 10,
-        "12lanthang": 25,
-        "12lantuan": 45,
-        "35lantuan": 15,
-        "gannhumoingay": 5
-    },
-    "mucdohailongcuabanvoigiaiphaphientaila": {
-        "1ratkhonghailong": 5,
-        "1": 5,
-        "2khonghailong": 25,
-        "2": 25,
-        "3binhthuong": 50,
-        "3": 50,
-        "4hailong": 15,
-        "4": 15,
-        "5rathailong": 5,
-        "5": 5
-    },
-    "dieughikhienbanchuathucsuthailongvoigiaiphaphientai": {
-        "giacao": 40,
-        "khongtiensudung": 30,
-        "khomangtheo": 25,
-        "phaisudungnhieubuoc": 35,
-        "khongphuhoapvoithoiquencanhan": 15,
-        "dungmotlantaonhieurac": 55,
-        "khongthichmui": 10,
-        "thietkekhongdep": 15,
-        "khongbietronguongocthanhphan": 30,
-        "khongtaocamgiacthugiannhumongmuon": 35,
-        "toichuatungsudunggiaiphapnao": 0,
-        "muckhac": 2,
-        "khac": 2
-    },
-    "neubanchuatungsudungsanphamhotrothugianmatlydo": {
-        "chuathaycanthiet": 20,
-        "chuabietsanphamphuhoap": 45,
-        "giachuaphuhoap": 15,
-        "khongtinhtuonghieuqua": 10,
-        "khongcothoigian": 5,
-        "chuatungduocgioithieu": 5,
-        "muckhac": 0,
-        "khac": 0
-    },
-    "neusudungmotsanphamhotrothugianmatbanmongmuonsanpham": {
-        "tietkiemthoigian": 60,
-        "cothesudungtainha": 70,
-        "cothemangdilamdihoc": 55,
-        "cothemangdilam": 55,
-        "cothemangdihoc": 55,
-        "cokhanangtaisudung": 80,
-        "nguongoctunhien": 75,
-        "muihuongdechiu": 60,
-        "thietkedep": 50,
-        "giahoply": 65,
-        "baobithanthienmoitruong": 50,
-        "nguongocnguyenlieuroorang": 65,
-        "phuhoaplamquatang": 40,
-        "khac": 2
-    },
-    "yeutonaoquantrongnhatvoibanhilachonmotsanpham": {
-        "gia": 15,
-        "congdungtrainghiemsudung": 40,
-        "nguongocnguyenlieu": 15,
-        "doantoan": 10,
-        "thietke": 5,
-        "muihuong": 2,
-        "tinhtienloi": 3,
-        "khanangtaisudung": 10,
-        "thuonghieu": 0,
-        "khac": 0
-    },
-    "banthichsanphamthugianmatcophongcachthietkenhuthenao": {
-        "toigian": 30,
-        "mocmacganguithiennhien": 55,
-        "hientai": 5,
-        "thanhlich": 5,
-        "dethuong": 3,
-        "sangtrong": 1,
-        "khongquantrong": 1
-    },
-    "saukhidocmotatrenmucdoquantamcuabandoivoisanphammockien": {
-        "1hoantoankhongquantam": 1,
-        "1": 1,
-        "2itquantam": 4,
-        "2": 4,
-        "3phanvan": 15,
-        "3": 15,
-        "4quantam": 50,
-        "4": 50,
-        "5ratquantam": 30,
-        "5": 30
-    },
-    "bandanhgiamucdophuhoapcuamockienvoinhucaucuaminhnhuthenao": {
-        "1hoantoankhongphuhoap": 1,
-        "1": 1,
-        "2khongphuhoap": 4,
-        "2": 4,
-        "3binhthuong": 15,
-        "3": 15,
-        "4khaphuhoap": 55,
-        "4": 55,
-        "5ratphuhoap": 25,
-        "5": 25
-    },
-    "diemnaocuamockienkhienbanquantamnhat": {
-        "cothesudungtainha": 60,
-        "thietkenhogon": 45,
-        "cothetaisudung": 65,
-        "thanhphanconguongoctunhien": 70,
-        "sudungnguyenlieubandia": 75,
-        "muihuongthaomoc": 45,
-        "tinhthammy": 35,
-        "baobithanthienmoitruong": 50,
-        "giadukien": 40,
-        "cothesudungnhuquatang": 35,
-        "khac": 0
-    },
-    "dieughicothekhienbankhongmuonmuamockien": {
-        "giacao": 30,
-        "khongchacchanvehieuqua": 40,
-        "loangaivedoantoan": 10,
-        "khongthichmuithaomoc": 5,
-        "khongthichcamgiacchuomam": 5,
-        "khongquensudungsanphamdangtuichuom": 20,
-        "loangaiveveisinh": 15,
-        "khongthichthietke": 5,
-        "khongconhucau": 5,
-        "khongtinhtuongthuonghieumoi": 25,
-        "muckhac": 0,
-        "khac": 0
-    },
-    "nemockiencochatluongvadacdiemnhumotamucgianaoban": {
-        "duoi50000dong": 2,
-        "5000099000dong": 10,
-        "100000149000dong": 55,
-        "150000199000dong": 30,
-        "200000249000dong": 2,
-        "tu250000dongtrolen": 1
-    },
-    "omucgianaobanchorangmockienbatdautronenguadat": {
-        "100000dong": 2,
-        "150000dong": 8,
-        "200000dong": 35,
-        "250000dong": 45,
-        "300000dong": 7,
-        "tren300000dong": 3
-    },
-    "neusanphamcogiacaohoansanphamthuongkhoang510": {
-        "sangsangmua": 45,
-        "cothecannhacmua": 45,
-        "khongquantam": 7,
-        "khongmuonmua": 3
-    },
-    "neumockienduocbantrenshopeehoactiktokshopvoimucgiaphu": {
-        "1chacchankhongmua": 1,
-        "1": 1,
-        "2cothekhongmua": 4,
-        "2": 4,
-        "3chuaquyetdinh": 15,
-        "3": 15,
-        "4cokhanangmua": 50,
-        "4": 50,
-        "5ratcokhanangmua": 30,
-        "5": 30
     }
 };
 
@@ -357,11 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // Get saved users or use default
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             let user = users.find(u => u.username === usernameInput);
             
-            // If they just use default "Le Ngoc Minh" or match a registered user
             if (!user && usernameInput === "Le Ngoc Minh") {
                 user = { name: "Lê Ngọc Minh", username: "Le Ngoc Minh" };
             }
@@ -370,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('currentUser', JSON.stringify(user));
                 checkAuthState();
             } else {
-                alert("Tài khoản không tồn tại. Vui lòng bấm Đăng ký ngay để tạo tài khoản mới!");
+                alert("Tài khoản không tồn tại. Vui lòng bấm Đăng ký để tạo tài khoản mới.");
             }
         });
     }
@@ -387,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             if (users.some(u => u.username === usernameInput) || usernameInput === "Le Ngoc Minh") {
-                alert("Tên đăng nhập này đã tồn tại!");
+                alert("Tên đăng nhập này đã tồn tại.");
                 return;
             }
 
@@ -396,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('users', JSON.stringify(users));
             localStorage.setItem('currentUser', JSON.stringify(newUser));
             
-            alert("Đăng ký tài khoản thành công!");
+            alert("Đăng ký tài khoản thành công.");
             checkAuthState();
         });
     }
@@ -415,7 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userDisplayName) userDisplayName.textContent = user.name;
             if (loginScreen) loginScreen.classList.add('hidden');
             if (dashboardScreen) dashboardScreen.classList.remove('hidden');
-            // Render previously loaded forms on dashboard load
             renderSavedFormsList();
         } else {
             if (loginScreen) loginScreen.classList.remove('hidden');
@@ -423,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 2. DASHBOARD NAVIGATION HANDLERS (PANELS SWITCHING)
+    // 2. DASHBOARD NAVIGATION HANDLERS
     const menuItems = document.querySelectorAll('.menu-item');
     const contentPanels = document.querySelectorAll('.content-panel');
 
@@ -436,18 +340,15 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const targetPanelId = item.dataset.panel;
             
-            // Remove active classes
             menuItems.forEach(i => i.classList.remove('active'));
             contentPanels.forEach(p => p.classList.remove('active'));
 
-            // Set active
             item.classList.add('active');
             const targetPanel = document.getElementById(targetPanelId);
             if (targetPanel) {
                 targetPanel.classList.add('active');
             }
 
-            // Sync empty screen panels logic
             if (targetPanelId === 'panel-active-form-view') {
                 toggleCampaignWorkspaceViews();
             } else if (targetPanelId === 'panel-manage-form') {
@@ -507,18 +408,17 @@ document.addEventListener('DOMContentLoaded', () => {
         btnParse.addEventListener('click', async () => {
             let url = formUrlInput.value.trim();
             if (!url) {
-                showError("Vui lòng nhập đường dẫn biểu mẫu hoặc mã cấu hình.");
+                showError("Vui lòng nhập đường dẫn biểu mẫu Google Form hoặc mã cấu hình CONFIG_...");
                 return;
             }
 
             let pendingConfig = null;
             if (url.startsWith('CONFIG_')) {
                 try {
-                    const jsonStr = decodeURIComponent(escape(atob(url.replace('CONFIG_', ''))));
-                    pendingConfig = JSON.parse(jsonStr);
+                    pendingConfig = decodeAnyConfigCode(url);
                     url = pendingConfig.url;
                 } catch (err) {
-                    showError("Mã cấu hình không hợp lệ hoặc bị lỗi.");
+                    showError("Mã cấu hình không hợp lệ hoặc bị cắt thiếu ký tự. Vui lòng kiểm tra lại.");
                     return;
                 }
             }
@@ -537,34 +437,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    throw new Error(data.error || "Có lỗi xảy ra khi phân tích form.");
+                    throw new Error(data.error || "Có lỗi xảy ra khi phân tích biểu mẫu.");
                 }
 
                 parsedForm = data;
                 parsedForm.url = url;
 
-                // Persist form to localStorage database
                 saveFormToLocalStorage(url, data);
                 
-                // Load details
                 formTitleDisplay.textContent = data.title;
                 formDescDisplay.textContent = data.description || "Không có mô tả.";
                 
                 if (data.requires_signin) {
-                    showError("CẢNH BÁO: Form này yêu cầu đăng nhập tài khoản Google (Giới hạn 1 câu trả lời). Hệ thống có thể không điền tự động được.");
+                    showError("Cảnh báo: Biểu mẫu này đang bật yêu cầu đăng nhập tài khoản Google (Giới hạn 1 lần trả lời). Bạn cần tắt tùy chọn này trong Cài đặt Google Form để chạy tự động.");
                 }
 
-                // Render both Questions and Right-side Question Checklist
                 renderQuestions(data);
                 renderQuestionChecklist(data);
                 
-                // Show campaign Workspace & Navigate to it
                 document.querySelector('.menu-item[data-panel="panel-active-form-view"]').click();
                 
                 if (pendingConfig) {
                     applyConfigPayload(pendingConfig);
-                    addLog("system", `Đã tải và tự động cấu hình biểu mẫu từ mã: "${data.title}"`);
-                    alert("Tải cấu hình thành công!");
+                    addLog("system", `Đã tải biểu mẫu và khôi phục cấu hình từ mã: "${data.title}"`);
+                    alert("Đã tải biểu mẫu và áp dụng mã cấu hình thành công.");
                 } else {
                     autoFillZeroPercentages();
                     addLog("system", `Đã tải thành công biểu mẫu: "${data.title}"`);
@@ -581,7 +477,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Save and retrieve loaded forms database in localStorage
     function saveFormToLocalStorage(url, data) {
         let saved = JSON.parse(localStorage.getItem('saved_forms') || '[]');
         if (!saved.some(f => f.url === url)) {
@@ -600,7 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const emptyState = document.getElementById('empty-manage-state');
         const saved = JSON.parse(localStorage.getItem('saved_forms') || '[]');
 
-        // Remove old lists if any
         const oldList = document.getElementById('saved-forms-list-container');
         if (oldList) oldList.remove();
 
@@ -613,20 +507,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const listContainer = document.createElement('div');
         listContainer.id = 'saved-forms-list-container';
-        listContainer.style.marginTop = '20px';
+        listContainer.style.marginTop = '16px';
 
         let listHtml = `
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fa-solid fa-list-check"></i> Các biểu mẫu của bạn</h2>
+                    <h2>Danh sách biểu mẫu đã lưu trên trình duyệt</h2>
                 </div>
                 <div class="card-body" style="padding: 0;">
                     <table class="premium-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
                         <thead>
-                            <tr style="border-bottom: 1px solid var(--border); background-color: rgba(10, 14, 23, 0.4);">
-                                <th style="padding: 14px 20px;">TÊN BIỂU MẪU</th>
-                                <th style="padding: 14px 20px; display: none;">MÔ TẢ</th>
-                                <th style="padding: 14px 20px; text-align: right;">HÀNH ĐỘNG</th>
+                            <tr style="border-bottom: 1px solid var(--border); background-color: rgba(15, 23, 42, 0.5);">
+                                <th style="padding: 13px 20px; color: var(--text-muted); font-size: 12px;">TÊN BIỂU MẪU</th>
+                                <th style="padding: 13px 20px; text-align: right; color: var(--text-muted); font-size: 12px;">THAO TÁC</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -634,14 +527,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saved.forEach((form, idx) => {
             listHtml += `
-                <tr style="border-bottom: 1px solid var(--border);" class="table-row-hover">
-                    <td style="padding: 16px 20px; font-weight: 700; color: var(--text-main); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${form.title}">${form.title}</td>
-                    <td style="padding: 16px 20px; text-align: right;">
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 14px 20px; font-weight: 600; color: var(--text-main); max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${form.title}">${form.title}</td>
+                    <td style="padding: 14px 20px; text-align: right;">
                         <button class="btn btn-primary btn-xs btn-open-saved" data-idx="${idx}">
-                            <i class="fa-solid fa-sliders"></i> Cấu hình
+                            Mở cấu hình
                         </button>
-                        <button class="btn btn-danger btn-xs btn-delete-saved" data-idx="${idx}" style="margin-left: 8px;">
-                            <i class="fa-solid fa-trash-can"></i> Xóa
+                        <button class="btn btn-danger btn-xs btn-delete-saved" data-idx="${idx}" style="margin-left: 6px;">
+                            Xóa
                         </button>
                     </td>
                 </tr>
@@ -658,7 +551,6 @@ document.addEventListener('DOMContentLoaded', () => {
         listContainer.innerHTML = listHtml;
         manageContainer.appendChild(listContainer);
 
-        // Attach clicks to Open buttons
         document.querySelectorAll('.btn-open-saved').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset.idx);
@@ -673,17 +565,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (form.configPayload) {
                     applyConfigPayload(form.configPayload);
-                    addLog("system", `Đã phục hồi cấu hình phần trăm đã lưu cho: "${parsedForm.title}"`);
+                    addLog("system", `Đã khôi phục cấu hình đã lưu cho biểu mẫu: "${parsedForm.title}"`);
                 } else {
                     autoFillZeroPercentages();
-                    addLog("system", `Đã tải biểu mẫu lưu trữ (chưa có cấu hình %): "${parsedForm.title}"`);
+                    addLog("system", `Đã mở biểu mẫu: "${parsedForm.title}"`);
                 }
 
                 document.querySelector('.menu-item[data-panel="panel-active-form-view"]').click();
             });
         });
 
-        // Attach clicks to Delete buttons
         document.querySelectorAll('.btn-delete-saved').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -693,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (confirm(`Bạn có chắc chắn muốn xóa biểu mẫu "${saved[idx].title}" khỏi danh sách đã lưu?`)) {
                     saved.splice(idx, 1);
                     localStorage.setItem('saved_forms', JSON.stringify(saved));
-                    renderSavedFormsList(); // re-render list
+                    renderSavedFormsList();
                 }
             });
         });
@@ -704,7 +595,22 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'custom_list';
     }
 
-    // 4. RENDER DETAILED QUESTION CARDS (SCREENSHOT 3)
+    function getReadableTypeLabel(elemType) {
+        const map = {
+            'Radio': 'Chọn 1 đáp án',
+            'Dropdown': 'Menu thả xuống',
+            'Scale': 'Thang đo',
+            'Checkboxes': 'Hộp kiểm (Chọn nhiều)',
+            'RadioGrid': 'Lưới chọn 1 đáp án',
+            'CheckboxGrid': 'Lưới hộp kiểm',
+            'Short': 'Trả lời ngắn',
+            'Paragraph': 'Đoạn văn',
+            'UserEmail': 'Email'
+        };
+        return map[elemType] || elemType;
+    }
+
+    // 4. RENDER DETAILED QUESTION CARDS (PURE TEXT, CLEAN UI)
     function renderQuestions(formData) {
         questionsContainer.innerHTML = '';
         let qIndex = 1;
@@ -712,7 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.pages.forEach(page => {
             const pageHeader = document.createElement('div');
             pageHeader.className = 'page-header-separator';
-            pageHeader.innerHTML = `<h3 style="font-size: 12px; margin: 15px 0 10px 0; color: var(--text-hint); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${page.title}</h3>`;
+            pageHeader.innerHTML = `<h3 style="font-size: 12px; margin: 12px 0 8px 0; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${page.title}</h3>`;
             questionsContainer.appendChild(pageHeader);
 
             page.elements.forEach(elem => {
@@ -721,11 +627,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 qDiv.dataset.id = elem.id;
                 qDiv.dataset.type = elem.type;
 
-                // Render Header Title & Status Badges
                 let reqHtml = elem.required ? `<span class="question-required">*</span>` : '';
-                let metaHtml = `<span class="question-badge">${elem.type}</span>`;
+                let metaHtml = `<span class="question-badge">${getReadableTypeLabel(elem.type)}</span>`;
                 let sumStatusHtml = ['Radio', 'Dropdown', 'Scale'].includes(elem.type) ? 
-                    `<span class="sum-status-badge invalid">Tổng: 0% (Thiếu 100%)</span>` : '';
+                    `<span class="sum-status-badge invalid">Tổng: 0% (Cần đủ 100%)</span>` : '';
                 
                 let descHtml = elem.description ? `<p class="question-desc">${elem.description}</p>` : '';
 
@@ -743,55 +648,49 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${descHtml}
                 `;
 
-                // Render dynamic choices in GRID style (Screenshot 3)
                 if (['Short', 'Paragraph', 'UserEmail'].includes(elem.type)) {
                     const detectedStrategy = detectDefaultStrategy(elem.name, elem.type);
                     const isListOrStatic = (detectedStrategy === 'custom_list' || detectedStrategy === 'static');
                     const placeholderText = detectedStrategy === 'static'
-                        ? 'Nhập 1 giá trị cố định để điền giống nhau cho mọi lượt...'
-                        : 'Danh sách dữ liệu sẽ điền cho từng lượt chạy (Mỗi dòng = 1 lượt điền).\n• Bấm "✨ AI Sinh Dữ Liệu" ở trên để AI tự hiểu ngữ cảnh biểu mẫu và tạo dữ liệu.\n• Hoặc tự dán danh sách tên người thật / tên doanh nghiệp của bạn vào đây.';
+                        ? 'Nhập nội dung cố định sẽ điền giống nhau cho tất cả các lượt...'
+                        : 'Nhập hoặc dán danh sách câu trả lời vào đây (Mỗi dòng tương ứng với 1 lượt điền):\n- Cách 1: Nhập yêu cầu ở ô trên rồi bấm "Tạo bằng AI" để hệ thống tự tạo danh sách.\n- Cách 2: Tự dán danh sách có sẵn của bạn (tên người, tên công ty, ý kiến... mỗi dòng 1 mục).\n- Cách 3: Nếu để trống, khi chạy hệ thống sẽ tự động dùng AI sinh dữ liệu phù hợp với câu hỏi.';
                     const helperText = detectedStrategy === 'static'
-                        ? '📌 Mọi lượt chạy sẽ điền cùng giá trị cố định này.'
-                        : '📋 <strong>Dữ liệu sẽ điền (Mỗi dòng = 1 lượt chạy):</strong> Bạn có thể dùng AI tạo tự động ở trên, hoặc tự dán danh sách (tên người, tên doanh nghiệp...), hoặc chỉnh sửa trực tiếp.';
+                        ? 'Nội dung cố định (Tất cả các lượt chạy sẽ điền cùng giá trị này):'
+                        : 'Danh sách dữ liệu điền lần lượt (Mỗi dòng = 1 lượt chạy, có thể chỉnh sửa trực tiếp):';
 
                     innerHtml += `
                         <div class="strategy-select-container" data-q-name="${(elem.name || '').replace(/"/g, '&quot;')}" data-q-desc="${(elem.description || '').replace(/"/g, '&quot;')}">
-                            <label style="font-size: 12px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-                                <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i> Chế độ sinh dữ liệu văn bản:
-                            </label>
-                            <select class="strategy-select" onchange="handleStrategyChange(this)" style="font-weight: 600; color: #34d399; background: rgba(15, 23, 42, 0.6); border-color: rgba(52, 211, 153, 0.3);">
-                                <option value="custom_list" ${detectedStrategy === 'custom_list' ? 'selected' : ''}>✨ AI Theo Ngữ Cảnh Biểu Mẫu / Danh Sách Tự Dán (Mỗi lượt điền 1 dòng)</option>
-                                <option value="email" ${detectedStrategy === 'email' ? 'selected' : ''}>📧 Địa Chỉ Email Ngẫu Nhiên (@gmail.com chuẩn người thật)</option>
-                                <option value="vi_name" ${detectedStrategy === 'vi_name' ? 'selected' : ''}>👤 Họ & Tên Người Thật (Tiếng Việt ngẫu nhiên, không trùng)</option>
-                                <option value="vi_phone" ${detectedStrategy === 'vi_phone' ? 'selected' : ''}>📞 Số Điện Thoại VN (09x/03x/08x chuẩn 10 số)</option>
-                                <option value="static" ${detectedStrategy === 'static' ? 'selected' : ''}>📌 Giá Trị Cố Định (Điền giống nhau mọi lượt)</option>
+                            <label class="strategy-label">Phương thức điền dữ liệu văn bản:</label>
+                            <select class="strategy-select" onchange="handleStrategyChange(this)">
+                                <option value="custom_list" ${detectedStrategy === 'custom_list' ? 'selected' : ''}>Tạo bằng AI theo ngữ cảnh biểu mẫu / Tự dán danh sách (Mỗi dòng 1 lượt)</option>
+                                <option value="email" ${detectedStrategy === 'email' ? 'selected' : ''}>Địa chỉ Email ngẫu nhiên (@gmail.com chuẩn người thật, không trùng)</option>
+                                <option value="vi_name" ${detectedStrategy === 'vi_name' ? 'selected' : ''}>Họ và tên tiếng Việt ngẫu nhiên (Không trùng lặp)</option>
+                                <option value="vi_phone" ${detectedStrategy === 'vi_phone' ? 'selected' : ''}>Số điện thoại Việt Nam (09x/03x/08x chuẩn 10 số, không trùng)</option>
+                                <option value="static" ${detectedStrategy === 'static' ? 'selected' : ''}>Giá trị cố định (Điền giống nhau cho mọi lượt)</option>
                             </select>
                             <div class="static-input-wrapper ${isListOrStatic ? '' : 'hidden'}" style="margin-top:10px;">
-                                <div class="question-ai-prompt-bar ${detectedStrategy === 'static' ? 'hidden' : ''}" style="display:flex; gap:8px; margin-bottom:10px; align-items:stretch;">
-                                    <div style="flex:1; position:relative; display:flex; align-items:center;">
-                                        <i class="fa-solid fa-robot" style="position:absolute; left:11px; color:#a78bfa; font-size:13px; pointer-events:none;"></i>
-                                        <input type="text" class="question-ai-prompt-input" placeholder="Prompt cho AI (VD: Sinh dữ liệu đúng mục đích câu này, hoặc để trống để AI tự hiểu theo tên Form)..." onkeydown="if(event.key==='Enter'){event.preventDefault(); generateQuestionTextByAI(this.parentElement.nextElementSibling);}" style="width:100%; padding:9px 12px 9px 32px; border-radius:8px; background:rgba(30, 27, 75, 0.55); border:1px solid rgba(167, 139, 250, 0.4); color:var(--text-main); font-size:12.5px;" />
-                                    </div>
-                                    <button type="button" class="btn btn-ai-action" onclick="generateQuestionTextByAI(this)" style="padding:0 14px; font-size:12.5px; white-space:nowrap; height:auto; min-height:36px;">
-                                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Sinh Dữ Liệu
+                                <div class="question-ai-prompt-bar ${detectedStrategy === 'static' ? 'hidden' : ''}">
+                                    <input type="text" class="question-ai-prompt-input" placeholder="Nhập yêu cầu riêng cho câu hỏi này (hoặc để trống rồi bấm nút bên cạnh để AI tự suy luận theo tên Form)..." onkeydown="if(event.key==='Enter'){event.preventDefault(); generateQuestionTextByAI(this.nextElementSibling);}" />
+                                    <button type="button" class="btn btn-ai-action" onclick="generateQuestionTextByAI(this)" style="padding:0 14px; font-size:12.5px; min-height:38px;">
+                                        Tạo bằng AI
                                     </button>
                                 </div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
-                                    <span class="custom-list-helper" style="font-size:11.5px; color:var(--text-muted);">${helperText}</span>
-                                    <span class="custom-list-counter ${detectedStrategy === 'static' ? 'hidden' : ''}" style="font-size:11px; font-weight:700; color:#38bdf8; background:rgba(56, 189, 248, 0.12); padding:2px 8px; border-radius:99px; white-space:nowrap;">Đã nhập: 0 dòng</span>
+                                <div class="custom-list-header">
+                                    <span class="custom-list-helper">${helperText}</span>
+                                    <span class="custom-list-counter ${detectedStrategy === 'static' ? 'hidden' : ''}">Số dòng: 0</span>
                                 </div>
-                                <textarea class="static-value-input" rows="${detectedStrategy === 'static' ? 2 : 5}" oninput="updateCustomListCount(this)" placeholder="${placeholderText}" style="width:100%; padding:10px 12px; border-radius:8px; background:rgba(15, 23, 42, 0.85); border:1px solid rgba(56, 189, 248, 0.35); color:var(--text-main); font-family:var(--font); font-size:13px; line-height:1.5; resize:vertical;"></textarea>
+                                <textarea class="static-value-input" rows="${detectedStrategy === 'static' ? 2 : 5}" oninput="updateCustomListCount(this)" placeholder="${placeholderText}"></textarea>
                             </div>
                         </div>
                     `;
                 } else if (['Radio', 'Dropdown', 'Scale'].includes(elem.type)) {
                     let choicesHtml = '';
                     elem.choices.forEach(choice => {
-                        choicesHtml += createChoiceRow(choice, false, elem.type);
+                        choicesHtml += createChoiceRow(choice, false);
                     });
                     
                     if (elem.has_other) {
-                        choicesHtml += createChoiceRow('__other_option__', true, elem.type);
+                        choicesHtml += createChoiceRow('__other_option__', true);
                     }
 
                     innerHtml += `
@@ -802,19 +701,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (elem.type === 'Checkboxes') {
                     let choicesHtml = '';
                     elem.choices.forEach(choice => {
-                        choicesHtml += createChoiceRow(choice, false, elem.type);
+                        choicesHtml += createChoiceRow(choice, false);
                     });
                     
                     if (elem.has_other) {
-                        choicesHtml += createChoiceRow('__other_option__', true, elem.type);
+                        choicesHtml += createChoiceRow('__other_option__', true);
                     }
 
                     innerHtml += `
                         <div class="choices-list">
                             ${choicesHtml}
                         </div>
-                        <div style="font-size:11.5px; color: var(--text-hint); margin-top: 10px;">
-                            * Tỷ lệ mỗi hộp kiểm độc lập (0-100%), không yêu cầu tổng % bằng 100%.
+                        <div style="font-size:12px; color: var(--text-hint); margin-top: 8px;">
+                            Ghi chú: Mỗi lựa chọn trong câu Hộp kiểm có xác suất được tích chọn độc lập (0% - 100%), không bắt buộc tổng bằng 100%.
                         </div>
                     `;
                 } else if (['RadioGrid', 'CheckboxGrid'].includes(elem.type)) {
@@ -822,24 +721,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     elem.rows.forEach(row => {
                         let colsHtml = '';
                         elem.choices.forEach(col => {
-                            colsHtml += createChoiceRow(col, false, elem.type);
+                            colsHtml += createChoiceRow(col, false);
                         });
                         
                         let isRadio = elem.type === 'RadioGrid';
                         let sumLabelHtml = isRadio ? `
-                            <div class="choices-summary" style="margin-top: 8px;">
+                            <div class="choices-summary" style="margin-top: 6px;">
                                 <span>Tổng hàng:</span>
                                 <span class="total-percent-display sum-invalid" style="font-weight:700;">0%</span>
                             </div>
                         ` : `
-                            <div class="choices-summary" style="margin-top: 8px;">
-                                <span style="font-size:10px; color: var(--text-hint);">* Từng ô độc lập</span>
+                            <div class="choices-summary" style="margin-top: 6px;">
+                                <span style="font-size:11px; color: var(--text-hint);">Từng ô độc lập (0-100%)</span>
                             </div>
                         `;
 
                         gridHtml += `
                             <div class="grid-row-container" data-row-name="${row}" style="margin-bottom:14px;">
-                                <div class="grid-row-title"><i class="fa-solid fa-chevron-right" style="font-size:9px; color:var(--primary);"></i> Hàng: ${row}</div>
+                                <div class="grid-row-title">Hàng: ${row}</div>
                                 <div class="choices-list">
                                     ${colsHtml}
                                 </div>
@@ -861,25 +760,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Attach events
         attachPercentInputEvents();
     }
 
-    function createChoiceRow(choiceVal, isOther, type) {
-        let labelText = isOther ? 'Đáp án khác (Tự động)' : choiceVal;
-        let iconClass = ['Checkboxes', 'CheckboxGrid'].includes(type) ? 'fa-regular fa-square' : 'fa-regular fa-circle-dot';
+    function createChoiceRow(choiceVal, isOther) {
+        let labelText = isOther ? 'Mục khác (Tự động điền)' : choiceVal;
         return `
             <div class="choice-row" data-choice-value="${choiceVal}">
-                <span class="choice-label" title="${labelText}"><i class="${iconClass}"></i> ${labelText}</span>
+                <span class="choice-label" title="${labelText}">${labelText}</span>
                 <div class="choice-input-wrapper">
-                    <input type="number" class="choice-percent-input" value="0" min="0" max="100" />
+                    <input type="number" class="choice-percent-input" value="0" min="0" max="100" placeholder="0" />
                     <span class="percent-sign">%</span>
                 </div>
             </div>
         `;
     }
 
-    // 5. RENDER RIGHT-SIDE CHECKLIST STATUS PANEL (SCREENSHOT 3)
+    // 5. RENDER RIGHT-SIDE CHECKLIST STATUS PANEL (PURE TEXT STATUS)
     function renderQuestionChecklist(formData) {
         checklistContainer.innerHTML = '';
         let index = 1;
@@ -891,15 +788,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.className = 'checklist-item';
                     item.dataset.qId = elem.id;
 
-                    let typeText = 'Lựa chọn';
-                    if (elem.type === 'Checkboxes') typeText = 'Hộp kiểm';
-                    else if (elem.type === 'RadioGrid') typeText = 'Hàng Lựa chọn';
-                    else if (elem.type === 'CheckboxGrid') typeText = 'Hàng Hộp kiểm';
-                    else if (['Short', 'Paragraph', 'UserEmail'].includes(elem.type)) typeText = 'Điền văn bản';
-
-                    let iconHtml = `<i class="fa-solid fa-circle-exclamation checklist-item-status invalid"></i>`;
+                    const typeText = getReadableTypeLabel(elem.type);
+                    let statusHtml = `<span class="checklist-status-text invalid">Chưa đủ</span>`;
                     if (['Checkboxes', 'CheckboxGrid', 'Short', 'Paragraph', 'UserEmail'].includes(elem.type)) {
-                        iconHtml = `<i class="fa-solid fa-circle-check checklist-item-status valid"></i>`;
+                        statusHtml = `<span class="checklist-status-text valid">Sẵn sàng</span>`;
                     }
 
                     item.innerHTML = `
@@ -909,11 +801,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="checklist-item-type">${typeText}</div>
                         </div>
                         <div class="checklist-item-status-wrapper">
-                            ${iconHtml}
+                            ${statusHtml}
                         </div>
                     `;
 
-                    // Click event to scroll to question card smoothly
                     item.addEventListener('click', () => {
                         document.querySelectorAll('.checklist-item').forEach(i => i.classList.remove('active'));
                         item.classList.add('active');
@@ -946,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lines.length === 1 && lines[0].includes(';')) {
             lines = lines[0].split(';').map(s => s.trim()).filter(Boolean);
         }
-        counter.textContent = `Đã nhập: ${lines.length} dòng`;
+        counter.textContent = `Số dòng: ${lines.length}`;
     };
 
     window.handleStrategyChange = function(selectElem) {
@@ -961,24 +852,24 @@ document.addEventListener('DOMContentLoaded', () => {
             staticWrapper.classList.remove('hidden');
             if (aiBar) aiBar.classList.remove('hidden');
             if (helper) {
-                helper.innerHTML = '📋 <strong>Dữ liệu sẽ điền (Mỗi dòng = 1 lượt chạy):</strong> Bạn có thể dùng AI tạo tự động ở trên, hoặc tự dán danh sách (tên người, tên doanh nghiệp...), hoặc chỉnh sửa trực tiếp.';
+                helper.textContent = 'Danh sách dữ liệu điền lần lượt (Mỗi dòng = 1 lượt chạy, có thể chỉnh sửa trực tiếp):';
             }
             if (counter) counter.classList.remove('hidden');
             if (textarea) {
                 textarea.rows = 5;
-                textarea.placeholder = 'Danh sách dữ liệu sẽ điền cho từng lượt chạy (Mỗi dòng = 1 lượt điền).\n• Bấm "✨ AI Sinh Dữ Liệu" ở trên để AI tự hiểu ngữ cảnh biểu mẫu và tạo dữ liệu.\n• Hoặc tự dán danh sách tên người thật / tên doanh nghiệp của bạn vào đây.';
+                textarea.placeholder = 'Nhập hoặc dán danh sách câu trả lời vào đây (Mỗi dòng tương ứng với 1 lượt điền):\n- Cách 1: Nhập yêu cầu ở ô trên rồi bấm "Tạo bằng AI" để hệ thống tự tạo danh sách.\n- Cách 2: Tự dán danh sách có sẵn của bạn (tên người, tên công ty, ý kiến... mỗi dòng 1 mục).\n- Cách 3: Nếu để trống, khi chạy hệ thống sẽ tự động dùng AI sinh dữ liệu phù hợp với câu hỏi.';
                 window.updateCustomListCount(textarea);
             }
         } else if (selectElem.value === 'static') {
             staticWrapper.classList.remove('hidden');
             if (aiBar) aiBar.classList.add('hidden');
             if (helper) {
-                helper.innerHTML = '📌 Mọi lượt chạy sẽ điền cùng giá trị cố định này.';
+                helper.textContent = 'Nội dung cố định (Tất cả các lượt chạy sẽ điền cùng giá trị này):';
             }
             if (counter) counter.classList.add('hidden');
             if (textarea) {
                 textarea.rows = 2;
-                textarea.placeholder = 'Nhập 1 giá trị cố định để điền giống nhau cho mọi lượt...';
+                textarea.placeholder = 'Nhập nội dung cố định sẽ điền giống nhau cho tất cả các lượt...';
             }
         } else {
             staticWrapper.classList.add('hidden');
@@ -1000,9 +891,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const submissionsInput = document.getElementById('campaign-submissions');
         const count = submissionsInput ? (parseInt(submissionsInput.value) || 20) : 20;
 
-        const origHtml = btnElem.innerHTML;
+        const origText = btnElem.textContent;
         btnElem.disabled = true;
-        btnElem.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang tạo...`;
+        btnElem.textContent = 'Đang tạo...';
 
         try {
             const res = await fetch('/api/ai-generate-text', {
@@ -1027,20 +918,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 textarea.value = items.join('\n');
                 window.updateCustomListCount(textarea);
             }
-            addLog('system', `✨ AI đã sinh ${items.length} dòng dữ liệu cho câu "${qName}": ${data.summary || ''}`);
+            addLog('system', `AI đã tạo ${items.length} dòng dữ liệu cho câu "${qName}".`);
         } catch (err) {
             alert(`Lỗi AI: ${err.message}`);
-            addLog('error', `Lỗi AI sinh dữ liệu câu "${qName}": ${err.message}`);
+            addLog('error', `Lỗi AI tạo dữ liệu câu "${qName}": ${err.message}`);
         } finally {
             btnElem.disabled = false;
-            btnElem.innerHTML = origHtml;
+            btnElem.textContent = origText;
         }
     };
 
     function attachPercentInputEvents() {
         const percentInputs = document.querySelectorAll('.choice-percent-input');
         percentInputs.forEach(input => {
-            // Clear default '0' on click/focus to allow direct typing
             input.addEventListener('focus', () => {
                 if (input.value === '0') {
                     input.value = '';
@@ -1065,7 +955,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateAllSums();
             });
 
-            // Restore '0' if user leaves input empty
             input.addEventListener('blur', () => {
                 if (input.value.trim() === '') {
                     input.value = 0;
@@ -1138,25 +1027,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 qItem.classList.add('valid-question');
             }
 
-            // Update checklist icon status
             const checklistItem = document.querySelector(`.checklist-item[data-q-id="${id}"]`);
             if (checklistItem) {
                 const statusWrapper = checklistItem.querySelector('.checklist-item-status-wrapper');
-                if (isValid) {
-                    statusWrapper.innerHTML = `<i class="fa-solid fa-circle-check checklist-item-status valid"></i>`;
+                if (['Checkboxes', 'CheckboxGrid', 'Short', 'Paragraph', 'UserEmail'].includes(type)) {
+                    statusWrapper.innerHTML = `<span class="checklist-status-text valid">Sẵn sàng</span>`;
+                } else if (isValid) {
+                    statusWrapper.innerHTML = `<span class="checklist-status-text valid">Đủ 100%</span>`;
                 } else {
-                    statusWrapper.innerHTML = `<i class="fa-solid fa-circle-exclamation checklist-item-status invalid"></i>`;
+                    statusWrapper.innerHTML = `<span class="checklist-status-text invalid">Chưa đủ</span>`;
                 }
             }
         });
     }
 
-    // Auto equal distribution logic
     if (btnAutoFillPercent) {
         btnAutoFillPercent.addEventListener('click', autoFillEqualPercentages);
     }
 
-    // AI Prompt quick chips
     document.querySelectorAll('.ai-chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const promptText = chip.dataset.prompt;
@@ -1167,11 +1055,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Handle AI Distribution Request
     if (btnAiDistribute) {
         btnAiDistribute.addEventListener('click', async () => {
             if (!parsedForm) {
-                alert("Vui lòng dán link Google Form và bấm 'Phân Tích Form' trước khi dùng tính năng AI.");
+                alert("Vui lòng dán link Google Form và bấm 'Phân tích biểu mẫu' trước khi dùng tính năng AI.");
                 return;
             }
 
@@ -1179,7 +1066,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const submissionsInput = document.getElementById('campaign-submissions');
             const count = submissionsInput ? (parseInt(submissionsInput.value) || 20) : 20;
 
-            // Extract ALL questions (both choice and text) from parsedForm
             const questions = [];
             if (parsedForm.pages) {
                 parsedForm.pages.forEach(page => {
@@ -1204,7 +1090,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // UI loading state
             btnAiDistribute.disabled = true;
             if (btnAiText) btnAiText.classList.add('hidden');
             if (btnAiSpinner) btnAiSpinner.classList.remove('hidden');
@@ -1228,14 +1113,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const data = await response.json();
                 if (!response.ok) {
-                    throw new Error(data.error || "Lỗi khi gọi Groq AI.");
+                    throw new Error(data.error || "Lỗi khi gọi AI.");
                 }
 
                 const dist = data.distribution || {};
                 const textSamples = data.text_samples || {};
                 let updatedCount = 0;
 
-                // Apply distributed percentages and text samples to DOM inputs
                 const qItems = document.querySelectorAll('.question-item');
                 qItems.forEach(qItem => {
                     const id = String(qItem.dataset.id);
@@ -1296,19 +1180,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 updateAllSums();
 
-                const summaryText = data.summary || "Đã phân tích ngữ cảnh biểu mẫu, chia % và tạo dữ liệu thành công!";
+                const summaryText = data.summary || "Đã phân tích ngữ cảnh biểu mẫu, chia tỷ lệ % và tạo dữ liệu thành công.";
                 if (aiStatusMsg) {
                     aiStatusMsg.className = 'ai-status-msg success';
-                    aiStatusMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Thành công:</strong> ${summaryText} (Đã cập nhật ${updatedCount} câu hỏi).`;
+                    aiStatusMsg.innerHTML = `<strong>Hoàn tất:</strong> ${summaryText} (Đã cập nhật ${updatedCount} câu hỏi).`;
                     aiStatusMsg.classList.remove('hidden');
                 }
 
-                addLog("system", `✨ Groq AI: "${summaryText}" - Đã cập nhật ${updatedCount} câu hỏi.`);
+                addLog("system", `AI: "${summaryText}" - Đã cập nhật ${updatedCount} câu hỏi.`);
 
             } catch (err) {
                 if (aiStatusMsg) {
                     aiStatusMsg.className = 'ai-status-msg error';
-                    aiStatusMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Lỗi AI:</strong> ${err.message}`;
+                    aiStatusMsg.innerHTML = `<strong>Lỗi AI:</strong> ${err.message}`;
                     aiStatusMsg.classList.remove('hidden');
                 }
                 addLog("error", `Lỗi phân tích AI: ${err.message}`);
@@ -1359,7 +1243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         updateAllSums();
-        addLog("system", "⚡ Đã phân phối đều tỷ lệ % các lựa chọn đáp án.");
+        addLog("system", "Đã chia đều tỷ lệ % cho tất cả các câu hỏi trắc nghiệm.");
     }
 
     function autoFillZeroPercentages() {
@@ -1370,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
             input.value = 0;
         });
         updateAllSums();
-        addLog("system", "ℹ️ Đã tải biểu mẫu. Tất cả các đáp án được đặt mặc định là 0%.");
+        addLog("system", "Đã tải biểu mẫu. Các đáp án trắc nghiệm đang đặt mặc định là 0%.");
     }
 
     function getCurrentConfigPayload() {
@@ -1421,7 +1305,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const distributionMode = 'absolute';
         
         return {
-            url: formUrlInput.value.trim().startsWith('CONFIG_') ? parsedForm.url : formUrlInput.value.trim(),
+            url: formUrlInput.value.trim().startsWith('CONFIG_') ? parsedForm.url : (parsedForm.url || formUrlInput.value.trim()),
             title: parsedForm.title,
             description: parsedForm.description,
             submissions: submissions,
@@ -1443,6 +1327,67 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('campaign-delay').value = config.delay;
         }
 
+        // Apply compact v2 format (CONFIG_2_...)
+        if (config.version === 2 && Array.isArray(config.qSegments)) {
+            const qItems = document.querySelectorAll('.question-item');
+            qItems.forEach((qItem, idx) => {
+                const seg = config.qSegments[idx];
+                if (!seg) return;
+                const type = qItem.dataset.type;
+
+                if (['Short', 'Paragraph', 'UserEmail'].includes(type)) {
+                    const stratCode = seg[0];
+                    const stratName = CODE_TO_STRATEGY[stratCode] || 'custom_list';
+                    const select = qItem.querySelector('.strategy-select');
+                    if (select) {
+                        select.value = stratName;
+                        window.handleStrategyChange(select);
+                    }
+                    if (config.customTexts && config.customTexts[idx] !== undefined) {
+                        const staticInput = qItem.querySelector('.static-value-input');
+                        if (staticInput) {
+                            staticInput.value = config.customTexts[idx];
+                            window.updateCustomListCount(staticInput);
+                        }
+                    }
+                } else if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
+                    const inputs = qItem.querySelectorAll('.choice-percent-input');
+                    inputs.forEach((inp, cIdx) => {
+                        if (seg[cIdx] !== undefined) {
+                            inp.value = seg[cIdx];
+                        }
+                    });
+                } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
+                    const rowSegs = [];
+                    let curRow = [];
+                    for (let i = 0; i < seg.length; i++) {
+                        if (seg[i] === 253) {
+                            rowSegs.push(curRow);
+                            curRow = [];
+                        } else {
+                            curRow.push(seg[i]);
+                        }
+                    }
+                    rowSegs.push(curRow);
+
+                    const rowContainers = qItem.querySelectorAll('.grid-row-container');
+                    rowContainers.forEach((container, rIdx) => {
+                        const rSeg = rowSegs[rIdx] || [];
+                        const inputs = container.querySelectorAll('.choice-percent-input');
+                        inputs.forEach((inp, cIdx) => {
+                            if (rSeg[cIdx] !== undefined) {
+                                inp.value = rSeg[cIdx];
+                            }
+                        });
+                    });
+                }
+            });
+
+            updateAllSums();
+            return;
+        }
+
+        // Apply legacy v1 format (CONFIG_eyJ... or localStorage object)
         if (config.percentages) {
             const qItems = document.querySelectorAll('.question-item');
             qItems.forEach(qItem => {
@@ -1528,8 +1473,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('saved_forms', JSON.stringify(saved));
             }
             
-            addLog("system", "💾 Đã lưu cấu hình phần trăm hiện tại vào trình duyệt.");
-            alert("Lưu cấu hình thành công!");
+            addLog("system", "Đã lưu cấu hình hiện tại vào trình duyệt.");
+            alert("Đã lưu cấu hình vào trình duyệt thành công.");
         });
     }
 
@@ -1541,15 +1486,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!payload) return;
             
             try {
-                const jsonStr = JSON.stringify(payload);
-                const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
-                const configCode = "CONFIG_" + base64Str;
+                const configCode = encodeShortConfigCode(payload.url, payload.submissions, payload.delay);
                 
                 navigator.clipboard.writeText(configCode).then(() => {
-                    addLog("system", "📋 Đã sao chép mã cấu hình chia sẻ vào bộ nhớ tạm.");
-                    alert("Đã sao chép Mã cấu hình vào bộ nhớ tạm! Bạn có thể lưu mã này vào Notepad để dùng lại bất cứ lúc nào.");
-                }).catch(err => {
-                    alert("Không thể sao chép tự động. Hãy sao chép mã này:\n\n" + configCode);
+                    addLog("system", `Đã sao chép mã cấu hình rút gọn (${configCode.length} ký tự) vào bộ nhớ tạm.`);
+                    alert(`Đã sao chép Mã cấu hình rút gọn (${configCode.length} ký tự) vào bộ nhớ tạm:\n\n${configCode}\n\nBạn có thể dán mã này vào ô nhập ở Trang chủ bất cứ lúc nào (hệ thống vẫn hỗ trợ cả các mã cấu hình dài trước đây).`);
+                }).catch(() => {
+                    prompt("Sao chép mã cấu hình rút gọn dưới đây:", configCode);
                 });
             } catch (err) {
                 alert("Lỗi xuất cấu hình: " + err.message);
@@ -1557,123 +1500,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function autoFillDefaultPercentages() {
-        if (!parsedForm) return;
-        
-        const qItems = document.querySelectorAll('.question-item');
-        let matchedCount = 0;
-        
-        qItems.forEach(qItem => {
-            const type = qItem.dataset.type;
-            const qTitle = qItem.querySelector('.question-title').textContent.replace('*', '').trim();
-            const matchedKey = Object.keys(defaultPercentagesMap).find(k => fuzzyMatch(k, qTitle));
-            
-            if (matchedKey) {
-                matchedCount++;
-                const questionConfig = defaultPercentagesMap[matchedKey];
-                
-                if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                    const choiceRows = qItem.querySelectorAll('.choice-row');
-                    let filledCount = 0;
-                    
-                    choiceRows.forEach(row => {
-                        const choiceVal = row.dataset.choiceValue;
-                        const matchedChoiceKey = Object.keys(questionConfig).find(k => fuzzyMatch(k, choiceVal));
-                        if (matchedChoiceKey !== undefined) {
-                            const val = questionConfig[matchedChoiceKey];
-                            row.querySelector('.choice-percent-input').value = val;
-                            filledCount++;
-                        }
-                    });
-                    
-                    if (filledCount < choiceRows.length) {
-                        choiceRows.forEach(row => {
-                            const input = row.querySelector('.choice-percent-input');
-                            if (!input.value) {
-                                input.value = 0;
-                            }
-                        });
-                    }
-                } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
-                    const rowContainers = qItem.querySelectorAll('.grid-row-container');
-                    rowContainers.forEach(container => {
-                        const rowName = container.dataset.rowName;
-                        const matchedRowKey = Object.keys(defaultPercentagesMap).find(k => fuzzyMatch(k, rowName));
-                        
-                        if (matchedRowKey) {
-                            const rowConfig = defaultPercentagesMap[matchedRowKey];
-                            const choiceRows = container.querySelectorAll('.choice-row');
-                            choiceRows.forEach(row => {
-                                const choiceVal = row.dataset.choiceValue;
-                                const matchedChoiceKey = Object.keys(rowConfig).find(k => fuzzyMatch(k, choiceVal));
-                                if (matchedChoiceKey !== undefined) {
-                                    row.querySelector('.choice-percent-input').value = rowConfig[matchedChoiceKey];
-                                } else {
-                                    row.querySelector('.choice-percent-input').value = 0;
-                                }
-                            });
-                        } else {
-                            const inputs = container.querySelectorAll('.choice-percent-input');
-                            if (type === 'CheckboxGrid') {
-                                inputs.forEach(input => input.value = 50);
-                            } else {
-                                let base = Math.floor(100 / inputs.length);
-                                let remainder = 100 % inputs.length;
-                                inputs.forEach((input, index) => {
-                                    input.value = base + (index < remainder ? 1 : 0);
-                                });
-                            }
-                        }
-                    });
-                }
-            } else {
-                if (['Radio', 'Dropdown', 'Scale', 'Checkboxes'].includes(type)) {
-                    const inputs = qItem.querySelectorAll('.choice-percent-input');
-                    if (inputs.length > 0) {
-                        if (type === 'Checkboxes') {
-                            inputs.forEach(input => input.value = 50);
-                        } else {
-                            let base = Math.floor(100 / inputs.length);
-                            let remainder = 100 % inputs.length;
-                            inputs.forEach((input, index) => {
-                                input.value = base + (index < remainder ? 1 : 0);
-                            });
-                        }
-                    }
-                } else if (['RadioGrid', 'CheckboxGrid'].includes(type)) {
-                    const rows = qItem.querySelectorAll('.grid-row-container');
-                    rows.forEach(row => {
-                        const inputs = row.querySelectorAll('.choice-percent-input');
-                        if (inputs.length > 0) {
-                            if (type === 'CheckboxGrid') {
-                                inputs.forEach(input => input.value = 50);
-                            } else {
-                                let base = Math.floor(100 / inputs.length);
-                                let remainder = 100 % inputs.length;
-                                inputs.forEach((input, index) => {
-                                    input.value = base + (index < remainder ? 1 : 0);
-                                });
-                            }
-                        }
-                    });
-                }
-            }
-        });
-        
-        updateAllSums();
-        if (matchedCount > 0) {
-            addLog("system", `⚡ Đã tự động điền tỷ lệ % mặc định khớp với ${matchedCount} câu hỏi của bạn.`);
-        } else {
-            addLog("system", "⚡ Đã phân phối đều tỷ lệ % các lựa chọn đáp án.");
-        }
-    }
-
     // 6. START CAMPAIGN HANDLER
     if (btnStart) {
         btnStart.addEventListener('click', async () => {
             if (!parsedForm) return;
 
-            // Validation checks
             let validationFailed = false;
             let invalidQuestionNames = [];
             
@@ -1702,15 +1533,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (validationFailed) {
-                alert(`⚠️ Không thể chạy chiến dịch!\n\nVui lòng kiểm tra các câu hỏi sau:\n- ${invalidQuestionNames.join('\n- ')}`);
+                alert(`Chưa thể bắt đầu chạy!\n\nVui lòng kiểm tra lại tổng tỷ lệ % (phải đủ 100%) ở các câu hỏi sau:\n- ${invalidQuestionNames.join('\n- ')}`);
                 return;
             }
 
-            // Gather configurations
             const submissions = parseInt(document.getElementById('campaign-submissions').value) || 10;
             const delay = parseFloat(document.getElementById('campaign-delay').value) || 1.0;
             
-            // Build payload question values
             const config = {};
             qItems.forEach(qItem => {
                 const id = qItem.dataset.id;
@@ -1765,7 +1594,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const distributionMode = 'absolute';
             const strictMode = true;
             
-            // Call API
             try {
                 const res = await fetch('/api/start', {
                     method: 'POST',
@@ -1788,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(resData.error || "Không thể khởi động chiến dịch.");
                 }
                 
-                addLog("system", "🏁 Đã khởi động chiến dịch điền giả lập tự động...");
+                addLog("system", "Đang khởi chạy chiến dịch điền biểu mẫu tự động...");
                 startPolling();
                 
             } catch (err) {
@@ -1801,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnStop) {
         btnStop.addEventListener('click', async () => {
             btnStop.disabled = true;
-            btnStop.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang Dừng...`;
+            btnStop.textContent = 'Đang dừng chiến dịch...';
             await fetch('/api/stop', { method: 'POST' });
         });
     }
@@ -1839,9 +1667,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const line = document.createElement('div');
             line.className = 'log-line';
             
-            if (log.includes('✅')) {
+            if (log.includes('✅') || log.includes('Thành công')) {
                 line.classList.add('success-log');
-            } else if (log.includes('❌') || log.includes('Lỗi')) {
+            } else if (log.includes('❌') || log.includes('Lỗi') || log.includes('Thất bại')) {
                 line.classList.add('error-log');
             } else {
                 line.classList.add('system-log');
@@ -1858,13 +1686,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnStop) {
             btnStop.classList.add('hidden');
             btnStop.disabled = false;
-            btnStop.innerHTML = `<i class="fa-solid fa-square-check"></i> Đang Dừng...`;
+            btnStop.textContent = 'Dừng chiến dịch';
         }
     }
 
     if (btnClearLogs) {
         btnClearLogs.addEventListener('click', () => {
-            logsContainer.innerHTML = '<div class="log-line system-log">Nhật ký đã được xóa.</div>';
+            logsContainer.innerHTML = '<div class="log-line system-log">Đã xóa nhật ký.</div>';
         });
     }
 
@@ -1884,7 +1712,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logsContainer.scrollTop = logsContainer.scrollHeight;
     }
 
-    // 7. QUICK TEXT IMPORT DIALOG (MODAL HANDLERS)
+    // 7. QUICK TEXT IMPORT DIALOG
     const btnImportTextTrigger = document.getElementById('btn-import-text-trigger');
     const importTextModal = document.getElementById('import-text-modal');
     const btnCloseModal = document.getElementById('btn-close-modal');
@@ -1917,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const parsedData = parseTextPercentages(text);
             if (parsedData.length === 0) {
-                alert("Không thể phân tích dữ liệu % từ văn bản. Vui lòng kiểm tra định dạng.");
+                alert("Không tìm thấy dữ liệu tỷ lệ % hợp lệ trong văn bản. Vui lòng kiểm tra lại định dạng.");
                 return;
             }
 
@@ -1964,8 +1792,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             updateAllSums();
             closeModal();
-            addLog("system", `⚡ Nhập nhanh thành công! Đã tự động điền tỷ lệ % cho ${matchCount} câu hỏi.`);
-            alert(`Thành công! Đã khớp và điền tự động tỷ lệ % cho ${matchCount} câu hỏi.`);
+            addLog("system", `Đã tự động khớp và điền tỷ lệ % cho ${matchCount} câu hỏi.`);
+            alert(`Đã khớp và điền tỷ lệ % cho ${matchCount} câu hỏi.`);
         });
     }
 
@@ -2008,6 +1836,5 @@ document.addEventListener('DOMContentLoaded', () => {
         return questionData;
     }
 
-    // Initialize auth state at the end of DOMContentLoaded
     checkAuthState();
 });

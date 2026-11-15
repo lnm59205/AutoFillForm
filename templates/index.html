@@ -3,289 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Forms Auto-Filler - Dashboard</title>
-    <!-- Plus Jakarta Sans & JetBrains Mono Fonts from Google Fonts -->
+    <title>AutoFillForm - Hệ thống điền biểu mẫu tự động</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/static/css/style.css?v=1.4">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v=2.0">
 </head>
-<body class="cyber-theme">
-    <!-- 1. LOGIN / REGISTER SCREEN -->
+<body>
+    <!-- 1. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
     <div id="login-screen" class="login-overlay">
         <div class="login-card">
             <div class="login-header">
-                <div class="login-logo">
-                    <i class="fa-solid fa-bolt-lightning login-icon"></i>
-                    <h2>AutoFillForm</h2>
-                </div>
-                <p>Smart filling, smart surveys!</p>
+                <h2>AutoFillForm</h2>
+                <p>Hệ thống cấu hình và điền khảo sát Google Forms tự động</p>
             </div>
             
-            <!-- Login Form -->
+            <!-- Form Đăng nhập -->
             <div id="login-form-container">
                 <div class="form-group">
-                    <label>Tên đăng nhập / Email</label>
-                    <input type="text" id="login-username" placeholder="Nhập email hoặc tên tài khoản..." value="Le Ngoc Minh">
+                    <label>Tên đăng nhập</label>
+                    <input type="text" id="login-username" placeholder="Nhập tên tài khoản (mặc định: Le Ngoc Minh)..." value="Le Ngoc Minh">
                 </div>
                 <div class="form-group">
                     <label>Mật khẩu</label>
-                    <input type="password" id="login-password" placeholder="Nhập mật khẩu..." value="••••••••">
+                    <input type="password" id="login-password" placeholder="Nhập mật khẩu bất kỳ để đăng nhập..." value="••••••••">
                 </div>
-                <button id="btn-login" class="btn btn-primary btn-block" style="margin-top: 10px;">
-                    <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập
+                <button id="btn-login" class="btn btn-primary btn-block" style="margin-top: 12px;">
+                    Đăng nhập hệ thống
                 </button>
-                <p class="auth-switch-text">Chưa có tài khoản? <a href="#" id="switch-to-register">Đăng ký ngay</a></p>
+                <p class="auth-switch-text">Chưa có tài khoản riêng? <a href="#" id="switch-to-register">Đăng ký tên hiển thị</a></p>
             </div>
 
-            <!-- Register Form (Hidden by default) -->
+            <!-- Form Đăng ký -->
             <div id="register-form-container" class="hidden">
                 <div class="form-group">
-                    <label>Họ và tên</label>
-                    <input type="text" id="register-name" placeholder="Ví dụ: Lê Ngọc Minh">
+                    <label>Họ và tên hiển thị</label>
+                    <input type="text" id="register-name" placeholder="Nhập họ và tên của bạn (VD: Nguyễn Văn A)...">
                 </div>
                 <div class="form-group">
-                    <label>Tên đăng nhập / Email</label>
-                    <input type="text" id="register-username" placeholder="Nhập email hoặc tên đăng nhập...">
+                    <label>Tên đăng nhập</label>
+                    <input type="text" id="register-username" placeholder="Nhập tên đăng nhập viết liền hoặc email...">
                 </div>
                 <div class="form-group">
                     <label>Mật khẩu</label>
-                    <input type="password" id="register-password" placeholder="Tạo mật khẩu bảo mật...">
+                    <input type="password" id="register-password" placeholder="Nhập mật khẩu cho tài khoản...">
                 </div>
-                <button id="btn-register" class="btn btn-primary btn-block" style="margin-top: 10px;">
-                    <i class="fa-solid fa-user-plus"></i> Đăng Ký
+                <button id="btn-register" class="btn btn-primary btn-block" style="margin-top: 12px;">
+                    Tạo tài khoản
                 </button>
-                <p class="auth-switch-text">Đã có tài khoản? <a href="#" id="switch-to-login">Đăng nhập</a></p>
+                <p class="auth-switch-text">Đã có tài khoản? <a href="#" id="switch-to-login">Quay lại đăng nhập</a></p>
             </div>
         </div>
     </div>
 
-    <!-- 2. MAIN DASHBOARD SCREEN (Hidden until logged in) -->
+    <!-- 2. MÀN HÌNH CHÍNH (DASHBOARD) -->
     <div id="dashboard-screen" class="dashboard-container hidden">
-        <!-- Sidebar Navigation -->
+        <!-- Thanh điều hướng bên trái -->
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <i class="fa-solid fa-bolt-lightning brand-icon"></i>
                 <div class="brand-info">
                     <span class="brand-title">AutoFillForm</span>
-                    <span class="brand-tagline">Smart filling, smart surveys!</span>
+                    <span class="brand-tagline">Tự động hóa khảo sát Google Forms</span>
                 </div>
             </div>
 
             <nav class="sidebar-menu">
-                <div class="menu-category">BẢNG ĐIỀU KHIỂN</div>
+                <div class="menu-category">ĐIỀU HƯỚNG</div>
                 <a href="#" class="menu-item active" data-panel="panel-home">
-                    <i class="fa-solid fa-house"></i> Trang chủ
-                </a>
-
-                <div class="menu-category">QUẢN LÍ</div>
-                <a href="#" class="menu-item" data-panel="panel-manage-form">
-                    <i class="fa-solid fa-folder-tree"></i> Quản lí Form
+                    Trang chủ (Nhập Form)
                 </a>
                 <a href="#" class="menu-item" data-panel="panel-active-form-view">
-                    <i class="fa-solid fa-sliders"></i> Cấu hình chiến dịch
+                    Cấu hình & Chạy chiến dịch
                 </a>
-                <a href="#" class="menu-item disabled-menu">
-                    <i class="fa-solid fa-cart-shopping"></i> Các đơn hàng
-                </a>
-                <a href="#" class="menu-item disabled-menu">
-                    <i class="fa-solid fa-chart-pie"></i> Nghiên cứu SPSS <span class="badge badge-purple">BETA</span>
-                </a>
-
-                <div class="menu-category">THANH TOÁN</div>
-                <a href="#" class="menu-item disabled-menu">
-                    <i class="fa-solid fa-credit-card"></i> Mua Credit
-                </a>
-                <a href="#" class="menu-item disabled-menu">
-                    <i class="fa-solid fa-file-invoice-dollar"></i> Quản Lý Hóa Đơn
-                </a>
-
-                <div class="menu-category">HỖ TRỢ</div>
-                <a href="#" class="menu-item disabled-menu">
-                    <i class="fa-solid fa-users"></i> Affiliate
+                <a href="#" class="menu-item" data-panel="panel-manage-form">
+                    Lịch sử biểu mẫu đã lưu
                 </a>
             </nav>
 
             <div class="sidebar-footer">
                 <button id="btn-logout" class="btn btn-secondary btn-block btn-sm">
-                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                    Đăng xuất
                 </button>
             </div>
         </aside>
 
-        <!-- Main Body Wrapper -->
+        <!-- Nội dung chính -->
         <div class="main-content">
-            <!-- Top Header -->
+            <!-- Thanh tiêu đề trên cùng -->
             <header class="main-header">
                 <div class="header-left">
-                    <button id="sidebar-toggle" class="btn btn-secondary btn-xs"><i class="fa-solid fa-bars"></i></button>
+                    <button id="sidebar-toggle" class="btn btn-secondary btn-xs">Menu</button>
                     <div class="greeting-box">
-                        <h3>Xin chào, <span id="user-display-name">Khách</span> 👋</h3>
-                        <p>Chúc bạn một ngày làm việc hiệu quả!</p>
+                        <h3>Tài khoản: <span id="user-display-name">Khách</span></h3>
+                        <p>Quản lý và thiết lập kịch bản điền biểu mẫu tự động</p>
                     </div>
                 </div>
-
                 <div class="header-right">
-                    <div class="credit-badge">
-                        <i class="fa-solid fa-coins"></i>
-                        <span>0 Credit</span>
-                    </div>
-                    <div class="header-icon-btn">
-                        <i class="fa-solid fa-bell"></i>
-                        <span class="dot"></span>
-                    </div>
                     <div class="user-profile">
-                        <div class="avatar">LM</div>
+                        <div class="avatar">AF</div>
                     </div>
                 </div>
             </header>
 
-            <!-- Dashboard Content Panels -->
+            <!-- Khung chứa các trang chức năng -->
             <div class="panel-container">
                 
-                <!-- PANEL 1: HOME PANEL -->
+                <!-- TRANG 1: TRANG CHỦ NHẬP LINK HOẶC MÃ CONFIG -->
                 <div id="panel-home" class="content-panel active">
                     <div class="panel-header-section">
-                        <h2>Bảng Điều Khiển</h2>
-                        <p>Nhập liên kết biểu mẫu Google để bắt đầu tạo chiến dịch điền giả lập.</p>
+                        <h2>Khởi tạo chiến dịch khảo sát</h2>
+                        <p>Dán đường dẫn biểu mẫu Google Forms hoặc mã cấu hình ngắn để bắt đầu thiết lập dữ liệu.</p>
                     </div>
 
                     <div class="dashboard-row">
-                        <!-- Left Action: Input URL -->
+                        <!-- Cột trái: Nhập URL / Mã cấu hình -->
                         <div class="card flex-1">
                             <div class="card-header">
-                                <h2><span class="step-badge">1</span> Nhập Đường Dẫn Hoặc Mã Cấu Hình</h2>
+                                <h2><span class="step-badge">1</span> Nhập đường dẫn biểu mẫu hoặc Mã cấu hình</h2>
                             </div>
                             <div class="card-body">
                                 <p class="description">
-                                    Dán đường dẫn biểu mẫu Google (dạng <code>/viewform</code> hoặc <code>/edit</code>) HOẶC dán <strong>Mã cấu hình đã lưu (CONFIG_...)</strong> để tự động tải lại % đã chia.
+                                    Bạn có thể dán trực tiếp link Google Form (dạng <code>/viewform</code>, <code>/edit</code>, <code>forms.gle/...</code>) để phân tích mới, hoặc dán <strong>Mã cấu hình (CONFIG_...)</strong> để tải lại toàn bộ tỷ lệ % đã thiết lập trước đó.
                                 </p>
                                 <div class="input-group">
-                                    <input type="text" id="form-url" placeholder="Dán link Google Form hoặc Mã cấu hình CONFIG_...">
+                                    <input type="text" id="form-url" placeholder="Dán link Google Form (https://docs.google.com/forms/...) hoặc mã CONFIG_... vào đây">
                                     <button id="btn-parse" class="btn btn-primary" style="white-space: nowrap;">
-                                        <span id="btn-parse-text"><i class="fa-solid fa-magnifying-glass"></i> Phân Tích Form</span>
-                                        <span id="btn-parse-spinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang đọc...</span>
+                                        <span id="btn-parse-text">Phân tích biểu mẫu</span>
+                                        <span id="btn-parse-spinner" class="hidden">Đang đọc biểu mẫu...</span>
                                     </button>
                                 </div>
                                 <div id="parse-error" class="error-msg hidden"></div>
                             </div>
                         </div>
 
-                        <!-- Right Info Card -->
-                        <div class="card" style="width: 350px;">
+                        <!-- Cột phải: Lưu ý -->
+                        <div class="card" style="width: 360px;">
                             <div class="card-header">
-                                <h2><i class="fa-solid fa-circle-info"></i> Lưu Ý Quan Trọng</h2>
+                                <h2>Lưu ý cài đặt trên Google Form</h2>
                             </div>
                             <div class="card-body">
-                                <ul class="info-list" style="font-size: 13px; padding-left: 16px; display: flex; flex-direction: column; gap: 10px;">
-                                    <li>Đảm bảo biểu mẫu đang ở chế độ công khai.</li>
-                                    <li>Nên <strong>tắt chế độ bắt buộc đăng nhập</strong> (Thu thập email / Trả lời 1 lần) để tool chạy tối ưu.</li>
-                                    <li>Có thể sử dụng link chỉnh sửa (edit URL) hoặc xem công khai (viewform URL).</li>
+                                <ul class="info-list" style="font-size: 13px; padding-left: 16px; display: flex; flex-direction: column; gap: 10px; color: var(--text-muted);">
+                                    <li>Biểu mẫu cần được mở quyền truy cập công khai (Bất kỳ ai có liên kết đều có thể trả lời).</li>
+                                    <li>Tắt tùy chọn <strong>Giới hạn ở 1 lần trả lời</strong> (vì tính năng này yêu cầu đăng nhập tài khoản Google).</li>
+                                    <li>Nếu có thu thập email, hãy chọn chế độ <strong>Thông tin trả lời của người dùng</strong> thay vì Đã xác minh.</li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- PANEL 2: MANAGE FORM -->
+                <!-- TRANG 2: QUẢN LÝ BIỂU MẪU ĐÃ LƯU -->
                 <div id="panel-manage-form" class="content-panel">
                     <div class="panel-header-section flex-header">
                         <div>
-                            <h2>Quản Lí Form</h2>
-                            <p>Danh sách các biểu mẫu đã từng phân tích trên hệ thống của bạn.</p>
+                            <h2>Lịch sử biểu mẫu đã lưu</h2>
+                            <p>Danh sách các biểu mẫu đã phân tích và lưu cấu hình trên trình duyệt của bạn.</p>
                         </div>
-                        <button class="btn btn-primary btn-sm" id="btn-nav-to-home"><i class="fa-solid fa-plus"></i> Thêm biểu mẫu</button>
+                        <button class="btn btn-primary btn-sm" id="btn-nav-to-home">Nhập biểu mẫu mới</button>
                     </div>
 
-                    <!-- Info Alert -->
                     <div class="alert-banner">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                        <span>Vui lòng tắt tùy chọn <strong>câu hỏi bắt buộc</strong> để đảm bảo quá trình điền tự động không bị gián đoạn!!!!</span>
+                        <span>Lưu ý: Đảm bảo biểu mẫu Google Form không bật chế độ bắt buộc đăng nhập tài khoản Google trước khi chạy.</span>
                     </div>
 
-                    <!-- Search Bar Layout -->
-                    <div class="card search-card">
-                        <div class="card-body search-body" style="display: flex; gap: 16px; align-items: center; padding: 12px 20px;">
-                            <div style="flex: 1; position: relative;">
-                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 14px; color: var(--text-hint);"></i>
-                                <input type="text" placeholder="Lọc nhanh biểu mẫu hiện có..." style="padding-left: 40px; margin-bottom: 0;">
-                            </div>
-                            <input type="text" placeholder="Tìm kiếm trên server..." style="width: 250px; margin-bottom: 0;">
-                            <button class="btn btn-primary"><i class="fa-solid fa-search"></i> Tìm kiếm</button>
-                        </div>
-                    </div>
-
-                    <!-- Empty State -->
                     <div class="empty-state-card" id="empty-manage-state">
-                        <i class="fa-solid fa-folder-open empty-icon"></i>
-                        <h4>Chưa có biểu mẫu nào</h4>
-                        <p>Bạn chưa nhập biểu mẫu nào hoặc bộ lọc không khớp. Hãy quay lại Trang chủ để nhập form mới!</p>
+                        <h4>Chưa có biểu mẫu nào được lưu</h4>
+                        <p>Hãy quay lại mục Trang chủ và dán đường dẫn Google Form để bắt đầu phân tích biểu mẫu đầu tiên.</p>
                     </div>
                 </div>
 
-                <!-- PANEL 3: ACTIVE FORM CAMPAIGN CONFIGURATION -->
+                <!-- TRANG 3: CẤU HÌNH & CHẠY CHIẾN DỊCH -->
                 <div id="panel-active-form-view" class="content-panel">
                     <div id="campaign-workspace" class="hidden">
-                        <!-- Active Form Details Header Banner (Centered Google Form Title style) -->
+                        <!-- Thông tin tiêu đề biểu mẫu -->
                         <div class="active-form-banner">
                             <h2 id="form-title-display">Tiêu đề biểu mẫu</h2>
                             <p id="form-desc-display">Mô tả biểu mẫu</p>
                         </div>
 
-                        <!-- 2-Column Campaign Workspace -->
+                        <!-- Bố cục 2 cột -->
                         <div class="campaign-grid">
-                            <!-- Left: Configurations and Questions (The Centerpiece) -->
+                            <!-- Cột trái: Cấu hình câu hỏi -->
                             <div class="campaign-left-col">
-                                <!-- Questions schema and percentage configurations -->
                                 <section class="card">
                                     <div class="card-header flex-header" style="flex-wrap: wrap; gap: 10px;">
-                                        <h2><span class="step-badge">2</span> Cấu Hình Đáp Án Tự Động</h2>
+                                        <h2><span class="step-badge">2</span> Cấu hình tỷ lệ % và dữ liệu câu trả lời</h2>
                                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                            <button id="btn-save-config" class="btn btn-success btn-sm" title="Lưu cấu hình tỷ lệ % hiện tại vào trình duyệt">
-                                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cấu Hình
+                                            <button id="btn-auto-fill-percent" class="btn btn-secondary btn-sm" title="Tự động chia đều tỷ lệ tổng 100% cho các câu hỏi trắc nghiệm">
+                                                Chia đều %
                                             </button>
-                                            <button id="btn-export-config" class="btn btn-primary btn-sm" title="Xuất mã cấu hình để chia sẻ/lưu trữ">
-                                                <i class="fa-solid fa-share-nodes"></i> Xuất Mã Share
+                                            <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm" title="Dán văn bản báo cáo có sẵn số % để điền nhanh">
+                                                Nhập % từ văn bản
                                             </button>
-                                            <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm" title="Nhập danh sách tỷ lệ % từ văn bản">
-                                                <i class="fa-solid fa-file-import"></i> Nhập nhanh % từ văn bản
+                                            <button id="btn-save-config" class="btn btn-secondary btn-sm" title="Lưu cấu hình hiện tại vào trình duyệt">
+                                                Lưu cấu hình
                                             </button>
-                                            <button id="btn-auto-fill-percent" class="btn btn-secondary btn-sm" title="Chia đều % các đáp án trắc nghiệm">
-                                                <i class="fa-solid fa-divide"></i> Chia Đều %
+                                            <button id="btn-export-config" class="btn btn-primary btn-sm" title="Sao chép mã cấu hình ngắn gọn để lưu trữ hoặc chia sẻ">
+                                                Xuất mã cấu hình
                                             </button>
                                         </div>
                                     </div>
                                     <div class="card-body">
-                                        <!-- GROQ AI ASSISTANT PANEL -->
+                                        <!-- KHUNG TRỢ LÝ AI TOÀN CỤC -->
                                         <div class="ai-assistant-card">
                                             <div class="ai-assistant-header">
                                                 <div class="ai-title">
-                                                    <i class="fa-solid fa-wand-magic-sparkles ai-sparkle-icon"></i>
                                                     <div>
-                                                        <strong>Trợ Lý AI Phân Bổ Tỷ Lệ % & Sinh Dữ Liệu Văn Bản Theo Ngữ Cảnh (Groq LPU)</strong>
-                                                        <span class="ai-badge">Tự hiểu mục đích Form • Chia % chuẩn 100% & Tạo câu trả lời tự luận</span>
+                                                        <strong>Trợ lý AI phân bổ tỷ lệ % và sinh câu trả lời tự luận</strong>
+                                                        <span class="ai-badge">Tự động theo ngữ cảnh biểu mẫu</span>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div class="ai-assistant-body">
                                                 <div class="ai-prompt-wrapper">
-                                                    <textarea id="ai-prompt-input" rows="2" placeholder="Nhập yêu cầu cho toàn bộ biểu mẫu (VD: Điểm danh sinh viên ĐH Phenikaa khóa K18-K20 / Khảo sát doanh nghiệp xuất khẩu, đa số đánh giá rất hài lòng...) hoặc để trống rồi bấm nút để AI tự hiểu theo tên Form!"></textarea>
+                                                    <textarea id="ai-prompt-input" rows="2" placeholder="Nhập mô tả mong muốn của bạn (VD: Đối tượng là sinh viên năm 2-4, khoảng 80% đánh giá tích cực, các câu tự luận điền thông tin sinh viên và nhận xét tự nhiên) — hoặc ĐỂ TRỐNG rồi bấm nút bên cạnh để AI tự phân tích theo tên biểu mẫu..."></textarea>
                                                     <button id="btn-ai-distribute" class="btn btn-ai-action" type="button">
-                                                        <span id="btn-ai-text"><i class="fa-solid fa-bolt"></i> AI Phân Tích & Tạo Dữ Liệu</span>
-                                                        <span id="btn-ai-spinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang phân tích...</span>
+                                                        <span id="btn-ai-text">Phân tích & Điền bằng AI</span>
+                                                        <span id="btn-ai-spinner" class="hidden">Đang xử lý...</span>
                                                     </button>
                                                 </div>
 
-                                                <!-- Quick Prompt Recommendation Chips -->
+                                                <!-- Gợi ý mẫu câu lệnh thuần văn bản -->
                                                 <div class="ai-quick-prompts">
-                                                    <span class="ai-chip-label"><i class="fa-solid fa-lightbulb"></i> Gợi ý prompt:</span>
-                                                    <button type="button" class="ai-chip" data-prompt=" Tự động phân tích tiêu đề và câu hỏi của biểu mẫu này để sinh dữ liệu điền văn bản và chia tỷ lệ % sát thực tế nhất.">🤖 Tự hiểu theo ngữ cảnh Form</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Đa số đánh giá rất hài lòng và tích cực (khoảng 80-90%), câu hỏi tự luận điền thông tin thực tế và nhận xét khen ngợi tự nhiên.">👍 Hài lòng cao (Tích cực)</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Đối tượng là sinh viên đại học (khóa K18, K19, K20), điền đầy đủ Họ tên, MSSV, Lớp/Khoa hợp lý và đánh giá khách quan.">🎓 Khảo sát / Điểm danh Sinh viên</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Đối tượng là các doanh nghiệp, công ty thực tế tại Việt Nam, trả lời chuyên nghiệp và khách quan.">🏢 Khảo sát Doanh nghiệp</button>
+                                                    <span class="ai-chip-label">Mẫu gợi ý nhanh:</span>
+                                                    <button type="button" class="ai-chip" data-prompt="Tự động phân tích tiêu đề và câu hỏi của biểu mẫu này để sinh dữ liệu điền văn bản và chia tỷ lệ % sát thực tế nhất.">Tự hiểu theo tiêu đề Form</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Đa số đánh giá rất hài lòng và tích cực (khoảng 80-90%), câu hỏi tự luận điền thông tin thực tế và nhận xét khen ngợi tự nhiên.">Đánh giá tích cực (80-90%)</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Đối tượng là sinh viên đại học (khóa K18, K19, K20), điền đầy đủ Họ tên, MSSV, Lớp/Khoa hợp lý và đánh giá khách quan.">Đối tượng Sinh viên</button>
+                                                    <button type="button" class="ai-chip" data-prompt="Đối tượng là các doanh nghiệp, công ty thực tế tại Việt Nam, trả lời chuyên nghiệp và khách quan.">Đối tượng Doanh nghiệp</button>
                                                 </div>
 
                                                 <div id="ai-status-msg" class="ai-status-msg hidden"></div>
@@ -293,47 +238,39 @@
                                         </div>
 
                                         <div id="form-questions-container">
-                                            <!-- Questions dynamically loaded here -->
+                                            <!-- Danh sách câu hỏi được hiển thị tại đây -->
                                         </div>
                                     </div>
                                 </section>
                             </div>
 
-                            <!-- Right: Settings, Questions checklist tracking, and Logs -->
+                            <!-- Cột phải: Thiết lập chạy, Danh sách câu hỏi và Nhật ký -->
                             <div class="campaign-right-col">
-                                <!-- Campaign Stats & Trigger -->
                                 <section class="card">
                                     <div class="card-header">
-                                        <h2><span class="step-badge">3</span> Thiết Lập Chiến Dịch</h2>
+                                        <h2><span class="step-badge">3</span> Thiết lập chạy chiến dịch</h2>
                                     </div>
                                     <div class="card-body" style="padding: 18px 20px;">
-                                         <div style="display: flex; gap: 12px; margin-bottom: 14px;">
-                                             <div class="form-group" style="margin-bottom: 0; flex: 1;">
-                                                 <label style="font-size:12.5px;">Số lượt điền:</label>
-                                                 <input type="number" id="campaign-submissions" value="10" min="1">
-                                             </div>
-                                             <div class="form-group" style="margin-bottom: 0; flex: 1;">
-                                                 <label style="font-size:12.5px;">Khoảng trễ (s):</label>
-                                                 <input type="number" id="campaign-delay" value="1.0" min="0.1" step="0.1">
-                                             </div>
-                                         </div>
+                                        <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+                                            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                                                <label style="font-size:12.5px;">Số lượt điền cần chạy:</label>
+                                                <input type="number" id="campaign-submissions" value="10" min="1" placeholder="VD: 41, 100...">
+                                            </div>
+                                            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                                                <label style="font-size:12.5px;">Độ trễ giữa 2 lượt (giây):</label>
+                                                <input type="number" id="campaign-delay" value="1.0" min="0.1" step="0.1" placeholder="VD: 1.0">
+                                            </div>
+                                        </div>
 
-                                         <!-- Distribution Mode Notification (Default Guaranteed Absolute Split) -->
-                                         <div class="distribution-mode-wrapper" style="margin-bottom: 16px;">
-                                             <div class="mode-banner mode-banner-absolute" style="margin-top: 4px;">
-                                                 <div style="display: flex; gap: 10px; align-items: flex-start;">
-                                                     <i class="fa-solid fa-bullseye" style="color: #fbbf24; font-size: 18px; margin-top: 2px;"></i>
-                                                     <div>
-                                                         <strong style="font-size: 13px; color: #fbbf24; display: block;">Mặc định: Chia Tuyệt Đối (Chuẩn 100% Theo % & Số Lượng Mẫu)</strong>
-                                                         <p style="font-size: 11.5px; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.45;">
-                                                             Hệ thống mặc định chia chuẩn xác 100% số lượng mẫu theo đúng tỷ lệ % bạn đã cấu hình (áp dụng thuật toán phần dư lớn nhất Hamilton, loại trừ hoàn toàn sai số ngẫu nhiên).
-                                                         </p>
-                                                     </div>
-                                                 </div>
-                                             </div>
-                                         </div>
+                                        <div class="distribution-mode-wrapper" style="margin-bottom: 16px;">
+                                            <div class="mode-banner mode-banner-absolute">
+                                                <strong style="font-size: 12.5px; color: var(--text-main); display: block;">Chế độ Chia Tuyệt Đối & Tự Động Bù Lỗi</strong>
+                                                <p style="font-size: 11.5px; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.5;">
+                                                    Hệ thống tính toán trước số phiếu của từng đáp án khớp chính xác 100% với tỷ lệ bạn đặt. Nếu có lượt gửi bị lỗi mạng, hệ thống sẽ tự động gửi lại cho đến khi đủ số lượt thành công.
+                                                </p>
+                                            </div>
+                                        </div>
                                         
-                                        <!-- Actions Container Inside Settings -->
                                         <div class="campaign-run-controls" style="margin-top: 0;">
                                             <div class="stats-row">
                                                 <div class="mini-stat"><span id="run-success">0</span> Thành công</div>
@@ -346,10 +283,10 @@
                                             
                                             <div style="display: flex; gap: 12px; margin-top: 10px;">
                                                 <button id="btn-start" class="btn btn-success btn-block" style="flex: 1;">
-                                                    <i class="fa-solid fa-play"></i> Bắt Đầu Chạy
+                                                    Bắt đầu chạy chiến dịch
                                                 </button>
                                                 <button id="btn-stop" class="btn btn-danger btn-block hidden" style="flex: 1;">
-                                                    <i class="fa-solid fa-square-check"></i> Đang Dừng...
+                                                    Dừng chiến dịch
                                                 </button>
                                             </div>
                                         </div>
@@ -358,33 +295,31 @@
 
                                 <section class="card question-checklist-card">
                                     <div class="card-header">
-                                        <h2><i class="fa-solid fa-clipboard-list"></i> Danh Sách Câu Hỏi</h2>
-                                        <span class="subtitle" style="font-size: 11px; display: block; margin-top: 2px;">Theo dõi trạng thái hoàn thành</span>
+                                        <h2>Danh sách câu hỏi</h2>
+                                        <span class="subtitle" style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 2px;">Bấm vào tên câu hỏi để cuộn nhanh tới vị trí cấu hình</span>
                                     </div>
                                     <div class="card-body checklist-body" id="question-checklist-container">
-                                        <!-- Checklist items dynamically loaded here -->
+                                        <!-- Danh sách kiểm tra câu hỏi -->
                                     </div>
                                 </section>
 
-                                <!-- Terminal Logs -->
                                 <section class="card terminal-card" style="margin-top: 0px;">
                                     <div class="card-header flex-header">
-                                        <h2><i class="fa-solid fa-terminal"></i> Nhật Ký Chạy</h2>
-                                        <button id="btn-clear-logs" class="btn btn-secondary btn-xs"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                                        <h2>Nhật ký hoạt động</h2>
+                                        <button id="btn-clear-logs" class="btn btn-secondary btn-xs">Xóa nhật ký</button>
                                     </div>
                                     <div class="terminal-body" id="logs-container">
-                                        <div class="log-line system-log">Nhấn "Bắt Đầu Chạy" để khởi động...</div>
+                                        <div class="log-line system-log">Sẵn sàng. Nhấn "Bắt đầu chạy chiến dịch" sau khi cấu hình xong.</div>
                                     </div>
                                 </section>
                             </div>
                         </div>
                     </div>
 
-                    <!-- No active form scanned fallback -->
+                    <!-- Trạng thái khi chưa tải biểu mẫu -->
                     <div class="empty-state-card" id="empty-active-state">
-                        <i class="fa-solid fa-sliders empty-icon"></i>
-                        <h4>Chưa cấu hình chiến dịch nào</h4>
-                        <p>Vui lòng quay lại Trang chủ, nhập link Google Form để bắt đầu phân tích thiết lập.</p>
+                        <h4>Chưa có biểu mẫu nào đang mở</h4>
+                        <p>Vui lòng chuyển sang mục Trang chủ và nhập đường dẫn Google Form hoặc mã cấu hình để bắt đầu.</p>
                     </div>
                 </div>
 
@@ -392,26 +327,26 @@
         </div>
     </div>
 
-    <!-- Modal for importing text percentages -->
+    <!-- Hộp thoại nhập nhanh tỷ lệ % từ văn bản -->
     <div id="import-text-modal" class="modal-overlay hidden">
         <div class="modal-container">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-file-import"></i> Nhập tỷ lệ % từ văn bản báo cáo</h3>
+                <h3>Nhập nhanh tỷ lệ % từ văn bản</h3>
                 <button class="modal-close-btn" id="btn-close-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <p class="description" style="font-size:12.5px; margin-bottom:12px;">
-                    Dán nội dung báo cáo khảo sát có chứa tỷ lệ % của các câu hỏi vào ô dưới đây. Hệ thống sẽ tự động tìm kiếm câu hỏi tương ứng và tự động điền các ô phần trăm.
+                    Dán nội dung kịch bản hoặc báo cáo khảo sát có chứa tỷ lệ % của các câu hỏi vào ô bên dưới. Hệ thống sẽ tự động khớp câu hỏi và điền số %.
                 </p>
-                <textarea id="import-text-area" placeholder="Dán văn bản báo cáo hoặc kết quả khảo sát tại đây...&#10;&#10;Ví dụ:&#10;Bạn đang sống ở đâu?&#10;- Hà Nội: 70%&#10;- TP. Hồ Chí Minh: 20%&#10;- Khác: 10%"></textarea>
+                <textarea id="import-text-area" placeholder="Dán văn bản chứa câu hỏi và tỷ lệ % tại đây...&#10;&#10;Ví dụ:&#10;Câu 1: Bạn đang sinh sống ở đâu?&#10;- Hà Nội: 70%&#10;- TP. Hồ Chí Minh: 20%&#10;- Khác: 10%"></textarea>
             </div>
             <div class="modal-footer">
-                <button id="btn-cancel-import" class="btn btn-secondary btn-sm">Hủy bỏ</button>
-                <button id="btn-submit-import" class="btn btn-primary btn-sm"><i class="fa-solid fa-check"></i> Xác nhận & Điền %</button>
+                <button id="btn-cancel-import" class="btn btn-secondary btn-sm">Đóng</button>
+                <button id="btn-submit-import" class="btn btn-primary btn-sm">Áp dụng tỷ lệ %</button>
             </div>
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=1.6"></script>
+    <script src="/static/js/app.js?v=2.0"></script>
 </body>
 </html>

@@ -1,0 +1,124 @@
+================================================================================
+              HƯỚNG DẪN SỬ DỤNG HỆ THỐNG AUTOFILLFORM (GOOGLE FORMS)
+                  Link truy cập: https://autofillform-pnbj.onrender.com
+================================================================================
+
+I. TRUY CẬP & ĐĂNG NHẬP HỆ THỐNG
+--------------------------------------------------------------------------------
+1. Mở trình duyệt web và truy cập vào địa chỉ:
+   https://autofillform-pnbj.onrender.com
+
+   * Lưu ý: Vì hệ thống chạy trên máy chủ Render, nếu lâu không có người dùng
+     truy cập thì lần mở đầu tiên có thể mất khoảng 30 - 50 giây để máy chủ
+     khởi động lại. Các thao tác sau đó sẽ chạy ngay lập tức.
+
+2. Đăng nhập:
+   - Màn hình đăng nhập đã điền sẵn tài khoản mặc định ("Le Ngoc Minh" và mật
+     khẩu). Bạn chỉ cần bấm nút "Đăng nhập hệ thống" để vào thẳng trang quản lý.
+   - Hoặc bấm "Đăng ký tên hiển thị" nếu muốn tạo tài khoản hiển thị riêng.
+
+
+II. CHUẨN BỊ GOOGLE FORM TRƯỚC KHI CHẠY (RẤT QUAN TRỌNG)
+--------------------------------------------------------------------------------
+Trước khi chạy, hãy kiểm tra mục "Cài đặt" (Settings) trên Google Form của bạn:
+- Mở quyền công khai (Bất kỳ ai có đường liên kết đều có thể trả lời).
+- TẮT tùy chọn "Giới hạn ở 1 lần trả lời" (Limit to 1 response) để không bắt
+  buộc đăng nhập tài khoản Google.
+- Ở mục "Thu thập địa chỉ email": Chọn "Không thu thập" hoặc "Thông tin trả lời
+  của người dùng" (Responder input), KHÔNG chọn "Đã xác minh" (Verified).
+
+
+III. BƯỚC 1: NHẬP ĐƯỜNG DẪN BIỂU MẪU HOẶC MÃ CẤU HÌNH
+--------------------------------------------------------------------------------
+Tại mục "1. Nhập đường dẫn biểu mẫu hoặc Mã cấu hình" ở Trang chủ:
+
+- Cách 1 (Nhập Form mới):
+  Dán đường dẫn Google Form (hỗ trợ cả link /viewform, /edit hoặc link rút gọn
+  forms.gle/...) vào ô nhập -> Bấm nút "Phân tích biểu mẫu".
+
+- Cách 2 (Tải lại cấu hình đã lưu):
+  Nếu đã có Mã cấu hình (dạng CONFIG_...) do bạn lưu trước đó hoặc do người
+  khác gửi, hãy dán thẳng mã CONFIG_... vào ô nhập -> Bấm "Phân tích biểu mẫu".
+  Hệ thống hỗ trợ cả mã cấu hình rút gọn mới (CONFIG_2_...) lẫn các mã cấu hình
+  dài trước đây, tự động mở đúng Form và khôi phục lại toàn bộ tỷ lệ % đã chia.
+
+
+IV. BƯỚC 2: CẤU HÌNH TỶ LỆ % & DỮ LIỆU CÂU TRẢ LỜI
+--------------------------------------------------------------------------------
+Sau khi phân tích xong, hệ thống hiển thị toàn bộ câu hỏi tại mục "2. Cấu hình
+tỷ lệ % và dữ liệu câu trả lời". Bạn có thể cấu hình theo 3 cách sau:
+
+1. DÙNG TRỢ LÝ AI TOÀN CỤC (NHANH & THÔNG MINH NHẤT)
+   - Tại khung "Trợ lý AI phân bổ tỷ lệ % và sinh câu trả lời tự luận":
+     + Nhập mô tả mong muốn của bạn vào ô văn bản. Ví dụ:
+       "Đối tượng là sinh viên năm 2-4, khoảng 80% đánh giá tích cực, các câu
+        tự luận điền thông tin sinh viên và nhận xét tự nhiên."
+     + Hoặc bấm chọn các nút gợi ý nhanh bên dưới ô nhập (Tự hiểu theo tiêu đề
+       Form / Đánh giá tích cực 80-90% / Đối tượng Sinh viên / Doanh nghiệp).
+     + Hoặc ĐỂ TRỐNG hoàn toàn để AI tự đọc tiêu đề & mô tả Form rồi suy luận.
+   - Bấm nút "Phân tích & Điền bằng AI":
+     + Các câu hỏi trắc nghiệm / thang đo / hộp kiểm sẽ được AI tự động chia tỷ
+       lệ % hợp lý (chuẩn tổng 100%).
+     + Các câu hỏi điền văn bản (Trả lời ngắn / Đoạn văn) sẽ được AI tự động
+       sinh danh sách câu trả lời sát thực tế và điền sẵn vào khung danh sách.
+
+2. CHỈNH SỬA CÂU HỎI TRẮC NGHIỆM / HỘP KIỂM / THANG ĐO / LƯỚI
+   - Câu chọn 1 đáp án (Trắc nghiệm, Menu thả xuống, Thang đo, Lưới chọn 1):
+     Điền số % cho từng đáp án sao cho tổng các đáp án của câu đó bằng 100%.
+   - Câu chọn nhiều đáp án (Hộp kiểm, Lưới hộp kiểm):
+     Điền xác suất tích chọn riêng cho từng ô từ 0% đến 100%.
+   - Các nút công cụ nhanh ở góc trên bên phải:
+     + "Chia đều %": Tự động chia đều 100% cho tất cả các câu hỏi trắc nghiệm.
+     + "Nhập % từ văn bản": Dán kịch bản/báo cáo có sẵn số % để hệ thống tự
+       động khớp tên câu hỏi và điền %.
+     + "Lưu cấu hình": Lưu lại cấu hình hiện tại vào trình duyệt.
+     + "Xuất mã cấu hình": Sao chép mã CONFIG_2_... rút gọn để lưu trữ hoặc
+       chia sẻ cho người khác.
+
+3. CHỈNH SỬA CÂU HỎI ĐIỀN VĂN BẢN (TRẢ LỜI NGẮN / ĐOẠN VĂN / EMAIL)
+   Tại mỗi câu hỏi điền văn bản, bạn có thể chọn 1 trong 5 phương thức:
+
+   (1) Tạo bằng AI theo ngữ cảnh biểu mẫu / Tự dán danh sách (Mỗi dòng 1 lượt):
+       - Dùng AI riêng cho câu hỏi đó: Nhập yêu cầu vào ô phía trên (hoặc để
+         trống) -> Bấm nút "Tạo bằng AI" để hệ thống sinh danh sách câu trả lời
+         tương ứng với số lượt cần điền.
+       - Tự dán danh sách có sẵn: Dán danh sách tên công ty, họ tên, ý kiến...
+         (mỗi dòng 1 mục hoặc cách nhau bởi dấu chấm phẩy ";"). Khi chạy, Lượt 1
+         sẽ điền dòng 1, Lượt 2 điền dòng 2... tuần tự và không trùng lặp.
+   (2) Địa chỉ Email ngẫu nhiên (@gmail.com chuẩn người thật, không trùng).
+   (3) Họ và tên tiếng Việt ngẫu nhiên (Không trùng lặp).
+   (4) Số điện thoại Việt Nam (09x/03x/08x chuẩn 10 số, không trùng).
+   (5) Giá trị cố định (Điền giống nhau cho mọi lượt).
+
+
+V. BƯỚC 3: THIẾT LẬP & BẮT ĐẦU CHẠY CHIẾN DỊCH
+--------------------------------------------------------------------------------
+Tại cột bên phải mục "3. Thiết lập chạy chiến dịch":
+
+1. Số lượt điền cần chạy:
+   Nhập tổng số phiếu khảo sát cần chạy (Ví dụ: 41, 100, 400...).
+
+2. Độ trễ giữa 2 lượt (giây):
+   Thời gian nghỉ giữa 2 lượt gửi liên tiếp (Mặc định: 1.0 giây; khuyến nghị
+   đặt từ 1.0 - 2.0 giây để ổn định nhất).
+
+3. Cơ chế Chia Tuyệt Đối & Tự Động Bù Lỗi:
+   - Chia Tuyệt Đối (Chuẩn 100%): Hệ thống tính toán chính xác số lượng phiếu
+     của từng đáp án theo đúng tỷ lệ % bạn đã đặt (thuật toán Hamilton), loại
+     bỏ hoàn toàn sai số ngẫu nhiên dù chạy ít hay nhiều lượt.
+   - Tự động chạy bù lượt lỗi (Auto-Retry): Nếu có lượt nào gặp sự cố mạng hoặc
+     timeout, hệ thống tự động giữ nguyên bộ đáp án của lượt đó và gửi lại cho
+     đến khi đạt ĐỦ 100% SỐ LƯỢT THÀNH CÔNG (VD: đặt 41 lượt sẽ chạy đủ 41/41).
+
+4. Khởi chạy & Theo dõi:
+   - Bấm nút màu xanh lá "Bắt đầu chạy chiến dịch".
+   - Theo dõi số lượt Thành công / Thất bại / Tiến độ và xem chi tiết từng lượt
+     tại khung "Nhật ký hoạt động" bên dưới.
+   - Có thể bấm nút màu đỏ "Dừng chiến dịch" nếu muốn dừng giữa chừng.
+
+
+VI. LỊCH SỬ BIỂU MẪU ĐÃ LƯU
+--------------------------------------------------------------------------------
+- Chọn mục "Lịch sử biểu mẫu đã lưu" ở thanh điều hướng bên trái để xem lại danh
+  sách các biểu mẫu đã từng phân tích và bấm "Mở cấu hình" bất cứ lúc nào.
+================================================================================
