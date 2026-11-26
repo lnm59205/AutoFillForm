@@ -1,124 +1,59 @@
 ================================================================================
-              HƯỚNG DẪN SỬ DỤNG HỆ THỐNG AUTOFILLFORM (GOOGLE FORMS)
-                  Link truy cập: https://autofillform-pnbj.onrender.com
+              HƯỚNG DẪN SỬ DỤNG AUTOFILLFORM STUDIO (BẢN NÂNG CẤP TOÀN DIỆN)
+                    100% MIỄN PHÍ · KHÔNG GIỚI HẠN CREDIT
 ================================================================================
 
-I. TRUY CẬP & ĐĂNG NHẬP HỆ THỐNG
---------------------------------------------------------------------------------
-1. Mở trình duyệt web và truy cập vào địa chỉ:
-   https://autofillform-pnbj.onrender.com
+1. KHỞI TẠO & PHÂN TÍCH BIỂU MẪU (GOOGLE FORMS & MICROSOFT FORMS)
+- Hỗ trợ Google Forms (/viewform, /edit, forms.gle/...) và Microsoft Forms
+  (forms.office.com/r/..., forms.cloud.microsoft, ResponsePage.aspx?id=...).
+- Hỗ trợ khôi phục tức thì từ mã cấu hình rút gọn CONFIG_2_..., mã CONFIG_ cũ,
+  hoặc file JSON xuất ra từ hệ thống.
+- Nút "Đồng bộ Form": Tự đọc lại biểu mẫu nếu bạn vừa thêm/sửa/xóa câu hỏi mà
+  vẫn giữ nguyên tỷ lệ % của các câu không đổi.
 
-   * Lưu ý: Vì hệ thống chạy trên máy chủ Render, nếu lâu không có người dùng
-     truy cập thì lần mở đầu tiên có thể mất khoảng 30 - 50 giây để máy chủ
-     khởi động lại. Các thao tác sau đó sẽ chạy ngay lập tức.
+2. CẤU HÌNH TỶ LỆ % & DỮ LIỆU VĂN BẢN
+- Giữ nguyên thế mạnh cốt lõi:
+  + Chia Tuyệt Đối 100% (Thuật toán Hamilton): Số phiếu từng đáp án khớp 100%.
+  + Tự động chạy bù lượt lỗi (Auto-Retry) khi rớt mạng.
+  + Trợ lý Groq AI miễn phí tích hợp sẵn (có thể nhập API Key riêng ở Cài đặt).
+  + Bộ sinh dữ liệu Việt Nam thực tế không trùng (Email @gmail.com, Họ tên có dấu,
+    SĐT 10 số VN, MSSV, Mã lớp, Địa chỉ) + Nhập % nhanh từ văn bản.
+- Nâng cấp mới:
+  + Chế độ Tự nhiên (Tích cực / Trung lập / Khắt khe).
+  + Nút "Xem trước dữ liệu" trước khi chạy.
+  + Rẽ nhánh Section (Branching) tự động bỏ qua phần không thuộc luồng đi.
 
-2. Đăng nhập:
-   - Màn hình đăng nhập đã điền sẵn tài khoản mặc định ("Le Ngoc Minh" và mật
-     khẩu). Bạn chỉ cần bấm nút "Đăng nhập hệ thống" để vào thẳng trang quản lý.
-   - Hoặc bấm "Đăng ký tên hiển thị" nếu muốn tạo tài khoản hiển thị riêng.
+3. RÀNG BUỘC LOGIC GIỮA CÁC CÂU HỎI
+- Tạo quy tắc Nếu Câu A = Đáp án X -> Câu B Bắt buộc chọn / Loại trừ Đáp án Y.
+- Nút "AI gợi ý quy tắc" và "Kiểm tra mâu thuẫn" phát hiện trùng lặp, mâu thuẫn, vòng lặp.
 
+4. ĐIỀN RẢI THEO GIỜ, HẸN GIỜ & CHẾ ĐỘ BAN ĐÊM
+- Chạy liên tục, Điền rải theo tổng thời gian (15 phút - 30 ngày) hoặc theo giãn cách
+  từng lượt (1-3p, 3-5p, 5-10p, 10-20p).
+- Hẹn giờ bắt đầu trong tương lai, tùy chọn Ban đêm (22h-7h: Bình thường / Tạm dừng / Giảm sâu).
+- Nút "Chạy ngay" để bỏ qua thời gian chờ của lượt kế tiếp ngay lập tức.
 
-II. CHUẨN BỊ GOOGLE FORM TRƯỚC KHI CHẠY (RẤT QUAN TRỌNG)
---------------------------------------------------------------------------------
-Trước khi chạy, hãy kiểm tra mục "Cài đặt" (Settings) trên Google Form của bạn:
-- Mở quyền công khai (Bất kỳ ai có đường liên kết đều có thể trả lời).
-- TẮT tùy chọn "Giới hạn ở 1 lần trả lời" (Limit to 1 response) để không bắt
-  buộc đăng nhập tài khoản Google.
-- Ở mục "Thu thập địa chỉ email": Chọn "Không thu thập" hoặc "Thông tin trả lời
-  của người dùng" (Responder input), KHÔNG chọn "Đã xác minh" (Verified).
+5. TỰ ĐỘNG HOÀN TOÀN BẰNG AI & ĐIỀN TỪ EXCEL / CSV
+- Tự động hoàn toàn bằng AI: Mô tả nhóm người trả lời + chọn xu hướng -> Xem thử 3
+  người miễn phí -> AI tự đóng vai toàn bộ form và gửi theo lịch.
+- Điền từ Excel/CSV: Tải file mẫu (.xlsx), tải lên file tối đa 5.000 dòng, tự ghép
+  cột với câu hỏi, báo chi tiết dòng lỗi, cho phép "Bỏ qua dòng lỗi".
 
+6. THIẾT KẾ GOOGLE FORM BẰNG AI
+- Mô tả khảo sát (Thường / NCKH-Luận văn / Khách hàng / Góp ý / Sự kiện / Quiz).
+- Chỉnh sửa trực tiếp, đổi mã biến ([TL1], TL1., TL1 -), xem Sơ đồ rẽ nhánh SVG,
+  xem trước như người trả lời, và xuất Google Apps Script tạo form thật trong 10 giây.
 
-III. BƯỚC 1: NHẬP ĐƯỜNG DẪN BIỂU MẪU HOẶC MÃ CẤU HÌNH
---------------------------------------------------------------------------------
-Tại mục "1. Nhập đường dẫn biểu mẫu hoặc Mã cấu hình" ở Trang chủ:
+7. PHÂN HỆ NGHIÊN CỨU ĐỊNH LƯỢNG (SPSS · SMARTPLS · AMOS · STATA)
+- Vẽ mô hình biến (IV, MED, MOD, DV) & đường dẫn giả thuyết beta (hoặc để AI gợi ý
+  từ Form đang mở), đánh dấu câu đảo chiều và câu loại lần 2.
+- Sinh dữ liệu mô phỏng hoặc Import CSV có sẵn để kiểm định: Cronbach's Alpha Lần 1 & 2,
+  KMO & Bartlett, EFA (Varimax), CR, AVE, rho_A, HTMT, VIF, f², R², CMIN/df, CFI, TLI, RMSEA, SRMR.
+- Xuất CSV mã số, CSV nhãn chữ, cú pháp IBM SPSS (.sps), STATA (.do), Báo cáo APA (.doc),
+  hoặc đẩy thẳng sang Trình điền Form.
 
-- Cách 1 (Nhập Form mới):
-  Dán đường dẫn Google Form (hỗ trợ cả link /viewform, /edit hoặc link rút gọn
-  forms.gle/...) vào ô nhập -> Bấm nút "Phân tích biểu mẫu".
-
-- Cách 2 (Tải lại cấu hình đã lưu):
-  Nếu đã có Mã cấu hình (dạng CONFIG_...) do bạn lưu trước đó hoặc do người
-  khác gửi, hãy dán thẳng mã CONFIG_... vào ô nhập -> Bấm "Phân tích biểu mẫu".
-  Hệ thống hỗ trợ cả mã cấu hình rút gọn mới (CONFIG_2_...) lẫn các mã cấu hình
-  dài trước đây, tự động mở đúng Form và khôi phục lại toàn bộ tỷ lệ % đã chia.
-
-
-IV. BƯỚC 2: CẤU HÌNH TỶ LỆ % & DỮ LIỆU CÂU TRẢ LỜI
---------------------------------------------------------------------------------
-Sau khi phân tích xong, hệ thống hiển thị toàn bộ câu hỏi tại mục "2. Cấu hình
-tỷ lệ % và dữ liệu câu trả lời". Bạn có thể cấu hình theo 3 cách sau:
-
-1. DÙNG TRỢ LÝ AI TOÀN CỤC (NHANH & THÔNG MINH NHẤT)
-   - Tại khung "Trợ lý AI phân bổ tỷ lệ % và sinh câu trả lời tự luận":
-     + Nhập mô tả mong muốn của bạn vào ô văn bản. Ví dụ:
-       "Đối tượng là sinh viên năm 2-4, khoảng 80% đánh giá tích cực, các câu
-        tự luận điền thông tin sinh viên và nhận xét tự nhiên."
-     + Hoặc bấm chọn các nút gợi ý nhanh bên dưới ô nhập (Tự hiểu theo tiêu đề
-       Form / Đánh giá tích cực 80-90% / Đối tượng Sinh viên / Doanh nghiệp).
-     + Hoặc ĐỂ TRỐNG hoàn toàn để AI tự đọc tiêu đề & mô tả Form rồi suy luận.
-   - Bấm nút "Phân tích & Điền bằng AI":
-     + Các câu hỏi trắc nghiệm / thang đo / hộp kiểm sẽ được AI tự động chia tỷ
-       lệ % hợp lý (chuẩn tổng 100%).
-     + Các câu hỏi điền văn bản (Trả lời ngắn / Đoạn văn) sẽ được AI tự động
-       sinh danh sách câu trả lời sát thực tế và điền sẵn vào khung danh sách.
-
-2. CHỈNH SỬA CÂU HỎI TRẮC NGHIỆM / HỘP KIỂM / THANG ĐO / LƯỚI
-   - Câu chọn 1 đáp án (Trắc nghiệm, Menu thả xuống, Thang đo, Lưới chọn 1):
-     Điền số % cho từng đáp án sao cho tổng các đáp án của câu đó bằng 100%.
-   - Câu chọn nhiều đáp án (Hộp kiểm, Lưới hộp kiểm):
-     Điền xác suất tích chọn riêng cho từng ô từ 0% đến 100%.
-   - Các nút công cụ nhanh ở góc trên bên phải:
-     + "Chia đều %": Tự động chia đều 100% cho tất cả các câu hỏi trắc nghiệm.
-     + "Nhập % từ văn bản": Dán kịch bản/báo cáo có sẵn số % để hệ thống tự
-       động khớp tên câu hỏi và điền %.
-     + "Lưu cấu hình": Lưu lại cấu hình hiện tại vào trình duyệt.
-     + "Xuất mã cấu hình": Sao chép mã CONFIG_2_... rút gọn để lưu trữ hoặc
-       chia sẻ cho người khác.
-
-3. CHỈNH SỬA CÂU HỎI ĐIỀN VĂN BẢN (TRẢ LỜI NGẮN / ĐOẠN VĂN / EMAIL)
-   Tại mỗi câu hỏi điền văn bản, bạn có thể chọn 1 trong 5 phương thức:
-
-   (1) Tạo bằng AI theo ngữ cảnh biểu mẫu / Tự dán danh sách (Mỗi dòng 1 lượt):
-       - Dùng AI riêng cho câu hỏi đó: Nhập yêu cầu vào ô phía trên (hoặc để
-         trống) -> Bấm nút "Tạo bằng AI" để hệ thống sinh danh sách câu trả lời
-         tương ứng với số lượt cần điền.
-       - Tự dán danh sách có sẵn: Dán danh sách tên công ty, họ tên, ý kiến...
-         (mỗi dòng 1 mục hoặc cách nhau bởi dấu chấm phẩy ";"). Khi chạy, Lượt 1
-         sẽ điền dòng 1, Lượt 2 điền dòng 2... tuần tự và không trùng lặp.
-   (2) Địa chỉ Email ngẫu nhiên (@gmail.com chuẩn người thật, không trùng).
-   (3) Họ và tên tiếng Việt ngẫu nhiên (Không trùng lặp).
-   (4) Số điện thoại Việt Nam (09x/03x/08x chuẩn 10 số, không trùng).
-   (5) Giá trị cố định (Điền giống nhau cho mọi lượt).
-
-
-V. BƯỚC 3: THIẾT LẬP & BẮT ĐẦU CHẠY CHIẾN DỊCH
---------------------------------------------------------------------------------
-Tại cột bên phải mục "3. Thiết lập chạy chiến dịch":
-
-1. Số lượt điền cần chạy:
-   Nhập tổng số phiếu khảo sát cần chạy (Ví dụ: 41, 100, 400...).
-
-2. Độ trễ giữa 2 lượt (giây):
-   Thời gian nghỉ giữa 2 lượt gửi liên tiếp (Mặc định: 1.0 giây; khuyến nghị
-   đặt từ 1.0 - 2.0 giây để ổn định nhất).
-
-3. Cơ chế Chia Tuyệt Đối & Tự Động Bù Lỗi:
-   - Chia Tuyệt Đối (Chuẩn 100%): Hệ thống tính toán chính xác số lượng phiếu
-     của từng đáp án theo đúng tỷ lệ % bạn đã đặt (thuật toán Hamilton), loại
-     bỏ hoàn toàn sai số ngẫu nhiên dù chạy ít hay nhiều lượt.
-   - Tự động chạy bù lượt lỗi (Auto-Retry): Nếu có lượt nào gặp sự cố mạng hoặc
-     timeout, hệ thống tự động giữ nguyên bộ đáp án của lượt đó và gửi lại cho
-     đến khi đạt ĐỦ 100% SỐ LƯỢT THÀNH CÔNG (VD: đặt 41 lượt sẽ chạy đủ 41/41).
-
-4. Khởi chạy & Theo dõi:
-   - Bấm nút màu xanh lá "Bắt đầu chạy chiến dịch".
-   - Theo dõi số lượt Thành công / Thất bại / Tiến độ và xem chi tiết từng lượt
-     tại khung "Nhật ký hoạt động" bên dưới.
-   - Có thể bấm nút màu đỏ "Dừng chiến dịch" nếu muốn dừng giữa chừng.
-
-
-VI. LỊCH SỬ BIỂU MẪU ĐÃ LƯU
---------------------------------------------------------------------------------
-- Chọn mục "Lịch sử biểu mẫu đã lưu" ở thanh điều hướng bên trái để xem lại danh
-  sách các biểu mẫu đã từng phân tích và bấm "Mở cấu hình" bất cứ lúc nào.
+8. SỬA DẤU THỜI GIAN GOOGLE SHEET & PWA
+- Dán link Google Sheet hoặc file CSV/XLSX -> chọn dòng -> rải lại mốc thời gian tăng
+  dần (có nghỉ ban đêm) -> xem trước và tải CSV/XLSX hoặc copy Apps Script sửa tại chỗ.
+- Hỗ trợ giao diện Sáng/Tối, song ngữ VI/EN, cài đặt PWA và thông báo trình duyệt.
 ================================================================================

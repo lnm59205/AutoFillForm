@@ -1,352 +1,831 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoFillForm - Hệ thống điền biểu mẫu tự động</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=2.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoFillForm Studio — Điền Google Form, Microsoft Forms, AI Designer & SPSS</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#10b981" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css?v=3.0" />
 </head>
 <body>
-    <!-- 1. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
-    <div id="login-screen" class="login-overlay">
-        <div class="login-card">
-            <div class="login-header">
-                <h2>AutoFillForm</h2>
-                <p>Hệ thống cấu hình và điền khảo sát Google Forms tự động</p>
-            </div>
-            
-            <!-- Form Đăng nhập -->
-            <div id="login-form-container">
-                <div class="form-group">
-                    <label>Tên đăng nhập</label>
-                    <input type="text" id="login-username" placeholder="Nhập tên tài khoản (mặc định: Le Ngoc Minh)..." value="Le Ngoc Minh">
-                </div>
-                <div class="form-group">
-                    <label>Mật khẩu</label>
-                    <input type="password" id="login-password" placeholder="Nhập mật khẩu bất kỳ để đăng nhập..." value="••••••••">
-                </div>
-                <button id="btn-login" class="btn btn-primary btn-block" style="margin-top: 12px;">
-                    Đăng nhập hệ thống
-                </button>
-                <p class="auth-switch-text">Chưa có tài khoản riêng? <a href="#" id="switch-to-register">Đăng ký tên hiển thị</a></p>
-            </div>
+  <!-- 1. AUTH / LOGIN SCREEN -->
+  <div id="login-screen" class="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <span class="brand-pill">FREE EDITION · KHÔNG GIỚI HẠN CREDIT</span>
+        <h2>AutoFillForm Studio</h2>
+        <p>Google Forms & Microsoft Forms · AI Designer · SPSS / SmartPLS</p>
+      </div>
 
-            <!-- Form Đăng ký -->
-            <div id="register-form-container" class="hidden">
-                <div class="form-group">
-                    <label>Họ và tên hiển thị</label>
-                    <input type="text" id="register-name" placeholder="Nhập họ và tên của bạn (VD: Nguyễn Văn A)...">
-                </div>
-                <div class="form-group">
-                    <label>Tên đăng nhập</label>
-                    <input type="text" id="register-username" placeholder="Nhập tên đăng nhập viết liền hoặc email...">
-                </div>
-                <div class="form-group">
-                    <label>Mật khẩu</label>
-                    <input type="password" id="register-password" placeholder="Nhập mật khẩu cho tài khoản...">
-                </div>
-                <button id="btn-register" class="btn btn-primary btn-block" style="margin-top: 12px;">
-                    Tạo tài khoản
-                </button>
-                <p class="auth-switch-text">Đã có tài khoản? <a href="#" id="switch-to-login">Quay lại đăng nhập</a></p>
-            </div>
+      <div id="login-form-container">
+        <div class="form-group">
+          <label data-i18n="login_user">Tên đăng nhập</label>
+          <input type="text" id="login-username" value="Le Ngoc Minh" placeholder="Nhập tên tài khoản..." />
         </div>
-    </div>
-
-    <!-- 2. MÀN HÌNH CHÍNH (DASHBOARD) -->
-    <div id="dashboard-screen" class="dashboard-container hidden">
-        <!-- Thanh điều hướng bên trái -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <div class="brand-info">
-                    <span class="brand-title">AutoFillForm</span>
-                    <span class="brand-tagline">Tự động hóa khảo sát Google Forms</span>
-                </div>
-            </div>
-
-            <nav class="sidebar-menu">
-                <div class="menu-category">ĐIỀU HƯỚNG</div>
-                <a href="#" class="menu-item active" data-panel="panel-home">
-                    Trang chủ (Nhập Form)
-                </a>
-                <a href="#" class="menu-item" data-panel="panel-active-form-view">
-                    Cấu hình & Chạy chiến dịch
-                </a>
-                <a href="#" class="menu-item" data-panel="panel-manage-form">
-                    Lịch sử biểu mẫu đã lưu
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <button id="btn-logout" class="btn btn-secondary btn-block btn-sm">
-                    Đăng xuất
-                </button>
-            </div>
-        </aside>
-
-        <!-- Nội dung chính -->
-        <div class="main-content">
-            <!-- Thanh tiêu đề trên cùng -->
-            <header class="main-header">
-                <div class="header-left">
-                    <button id="sidebar-toggle" class="btn btn-secondary btn-xs">Menu</button>
-                    <div class="greeting-box">
-                        <h3>Tài khoản: <span id="user-display-name">Khách</span></h3>
-                        <p>Quản lý và thiết lập kịch bản điền biểu mẫu tự động</p>
-                    </div>
-                </div>
-                <div class="header-right">
-                    <div class="user-profile">
-                        <div class="avatar">AF</div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Khung chứa các trang chức năng -->
-            <div class="panel-container">
-                
-                <!-- TRANG 1: TRANG CHỦ NHẬP LINK HOẶC MÃ CONFIG -->
-                <div id="panel-home" class="content-panel active">
-                    <div class="panel-header-section">
-                        <h2>Khởi tạo chiến dịch khảo sát</h2>
-                        <p>Dán đường dẫn biểu mẫu Google Forms hoặc mã cấu hình ngắn để bắt đầu thiết lập dữ liệu.</p>
-                    </div>
-
-                    <div class="dashboard-row">
-                        <!-- Cột trái: Nhập URL / Mã cấu hình -->
-                        <div class="card flex-1">
-                            <div class="card-header">
-                                <h2><span class="step-badge">1</span> Nhập đường dẫn biểu mẫu hoặc Mã cấu hình</h2>
-                            </div>
-                            <div class="card-body">
-                                <p class="description">
-                                    Bạn có thể dán trực tiếp link Google Form (dạng <code>/viewform</code>, <code>/edit</code>, <code>forms.gle/...</code>) để phân tích mới, hoặc dán <strong>Mã cấu hình (CONFIG_...)</strong> để tải lại toàn bộ tỷ lệ % đã thiết lập trước đó.
-                                </p>
-                                <div class="input-group">
-                                    <input type="text" id="form-url" placeholder="Dán link Google Form (https://docs.google.com/forms/...) hoặc mã CONFIG_... vào đây">
-                                    <button id="btn-parse" class="btn btn-primary" style="white-space: nowrap;">
-                                        <span id="btn-parse-text">Phân tích biểu mẫu</span>
-                                        <span id="btn-parse-spinner" class="hidden">Đang đọc biểu mẫu...</span>
-                                    </button>
-                                </div>
-                                <div id="parse-error" class="error-msg hidden"></div>
-                            </div>
-                        </div>
-
-                        <!-- Cột phải: Lưu ý -->
-                        <div class="card" style="width: 360px;">
-                            <div class="card-header">
-                                <h2>Lưu ý cài đặt trên Google Form</h2>
-                            </div>
-                            <div class="card-body">
-                                <ul class="info-list" style="font-size: 13px; padding-left: 16px; display: flex; flex-direction: column; gap: 10px; color: var(--text-muted);">
-                                    <li>Biểu mẫu cần được mở quyền truy cập công khai (Bất kỳ ai có liên kết đều có thể trả lời).</li>
-                                    <li>Tắt tùy chọn <strong>Giới hạn ở 1 lần trả lời</strong> (vì tính năng này yêu cầu đăng nhập tài khoản Google).</li>
-                                    <li>Nếu có thu thập email, hãy chọn chế độ <strong>Thông tin trả lời của người dùng</strong> thay vì Đã xác minh.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TRANG 2: QUẢN LÝ BIỂU MẪU ĐÃ LƯU -->
-                <div id="panel-manage-form" class="content-panel">
-                    <div class="panel-header-section flex-header">
-                        <div>
-                            <h2>Lịch sử biểu mẫu đã lưu</h2>
-                            <p>Danh sách các biểu mẫu đã phân tích và lưu cấu hình trên trình duyệt của bạn.</p>
-                        </div>
-                        <button class="btn btn-primary btn-sm" id="btn-nav-to-home">Nhập biểu mẫu mới</button>
-                    </div>
-
-                    <div class="alert-banner">
-                        <span>Lưu ý: Đảm bảo biểu mẫu Google Form không bật chế độ bắt buộc đăng nhập tài khoản Google trước khi chạy.</span>
-                    </div>
-
-                    <div class="empty-state-card" id="empty-manage-state">
-                        <h4>Chưa có biểu mẫu nào được lưu</h4>
-                        <p>Hãy quay lại mục Trang chủ và dán đường dẫn Google Form để bắt đầu phân tích biểu mẫu đầu tiên.</p>
-                    </div>
-                </div>
-
-                <!-- TRANG 3: CẤU HÌNH & CHẠY CHIẾN DỊCH -->
-                <div id="panel-active-form-view" class="content-panel">
-                    <div id="campaign-workspace" class="hidden">
-                        <!-- Thông tin tiêu đề biểu mẫu -->
-                        <div class="active-form-banner">
-                            <h2 id="form-title-display">Tiêu đề biểu mẫu</h2>
-                            <p id="form-desc-display">Mô tả biểu mẫu</p>
-                        </div>
-
-                        <!-- Bố cục 2 cột -->
-                        <div class="campaign-grid">
-                            <!-- Cột trái: Cấu hình câu hỏi -->
-                            <div class="campaign-left-col">
-                                <section class="card">
-                                    <div class="card-header flex-header" style="flex-wrap: wrap; gap: 10px;">
-                                        <h2><span class="step-badge">2</span> Cấu hình tỷ lệ % và dữ liệu câu trả lời</h2>
-                                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                            <button id="btn-auto-fill-percent" class="btn btn-secondary btn-sm" title="Tự động chia đều tỷ lệ tổng 100% cho các câu hỏi trắc nghiệm">
-                                                Chia đều %
-                                            </button>
-                                            <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm" title="Dán văn bản báo cáo có sẵn số % để điền nhanh">
-                                                Nhập % từ văn bản
-                                            </button>
-                                            <button id="btn-save-config" class="btn btn-secondary btn-sm" title="Lưu cấu hình hiện tại vào trình duyệt">
-                                                Lưu cấu hình
-                                            </button>
-                                            <button id="btn-export-config" class="btn btn-primary btn-sm" title="Sao chép mã cấu hình ngắn gọn để lưu trữ hoặc chia sẻ">
-                                                Xuất mã cấu hình
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <!-- KHUNG TRỢ LÝ AI TOÀN CỤC -->
-                                        <div class="ai-assistant-card">
-                                            <div class="ai-assistant-header">
-                                                <div class="ai-title">
-                                                    <div>
-                                                        <strong>Trợ lý AI phân bổ tỷ lệ % và sinh câu trả lời tự luận</strong>
-                                                        <span class="ai-badge">Tự động theo ngữ cảnh biểu mẫu</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="ai-assistant-body">
-                                                <div class="ai-prompt-wrapper">
-                                                    <textarea id="ai-prompt-input" rows="2" placeholder="Nhập mô tả mong muốn của bạn (VD: Đối tượng là sinh viên năm 2-4, khoảng 80% đánh giá tích cực, các câu tự luận điền thông tin sinh viên và nhận xét tự nhiên) — hoặc ĐỂ TRỐNG rồi bấm nút bên cạnh để AI tự phân tích theo tên biểu mẫu..."></textarea>
-                                                    <button id="btn-ai-distribute" class="btn btn-ai-action" type="button">
-                                                        <span id="btn-ai-text">Phân tích & Điền bằng AI</span>
-                                                        <span id="btn-ai-spinner" class="hidden">Đang xử lý...</span>
-                                                    </button>
-                                                </div>
-
-                                                <!-- Gợi ý mẫu câu lệnh thuần văn bản -->
-                                                <div class="ai-quick-prompts">
-                                                    <span class="ai-chip-label">Mẫu gợi ý nhanh:</span>
-                                                    <button type="button" class="ai-chip" data-prompt="Tự động phân tích tiêu đề và câu hỏi của biểu mẫu này để sinh dữ liệu điền văn bản và chia tỷ lệ % sát thực tế nhất.">Tự hiểu theo tiêu đề Form</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Đa số đánh giá rất hài lòng và tích cực (khoảng 80-90%), câu hỏi tự luận điền thông tin thực tế và nhận xét khen ngợi tự nhiên.">Đánh giá tích cực (80-90%)</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Đối tượng là sinh viên đại học (khóa K18, K19, K20), điền đầy đủ Họ tên, MSSV, Lớp/Khoa hợp lý và đánh giá khách quan.">Đối tượng Sinh viên</button>
-                                                    <button type="button" class="ai-chip" data-prompt="Đối tượng là các doanh nghiệp, công ty thực tế tại Việt Nam, trả lời chuyên nghiệp và khách quan.">Đối tượng Doanh nghiệp</button>
-                                                </div>
-
-                                                <div id="ai-status-msg" class="ai-status-msg hidden"></div>
-                                            </div>
-                                        </div>
-
-                                        <div id="form-questions-container">
-                                            <!-- Danh sách câu hỏi được hiển thị tại đây -->
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-
-                            <!-- Cột phải: Thiết lập chạy, Danh sách câu hỏi và Nhật ký -->
-                            <div class="campaign-right-col">
-                                <section class="card">
-                                    <div class="card-header">
-                                        <h2><span class="step-badge">3</span> Thiết lập chạy chiến dịch</h2>
-                                    </div>
-                                    <div class="card-body" style="padding: 18px 20px;">
-                                        <div style="display: flex; gap: 12px; margin-bottom: 14px;">
-                                            <div class="form-group" style="margin-bottom: 0; flex: 1;">
-                                                <label style="font-size:12.5px;">Số lượt điền cần chạy:</label>
-                                                <input type="number" id="campaign-submissions" value="10" min="1" placeholder="VD: 41, 100...">
-                                            </div>
-                                            <div class="form-group" style="margin-bottom: 0; flex: 1;">
-                                                <label style="font-size:12.5px;">Độ trễ giữa 2 lượt (giây):</label>
-                                                <input type="number" id="campaign-delay" value="1.0" min="0.1" step="0.1" placeholder="VD: 1.0">
-                                            </div>
-                                        </div>
-
-                                        <div class="distribution-mode-wrapper" style="margin-bottom: 16px;">
-                                            <div class="mode-banner mode-banner-absolute">
-                                                <strong style="font-size: 12.5px; color: var(--text-main); display: block;">Chế độ Chia Tuyệt Đối & Tự Động Bù Lỗi</strong>
-                                                <p style="font-size: 11.5px; color: var(--text-muted); margin: 4px 0 0 0; line-height: 1.5;">
-                                                    Hệ thống tính toán trước số phiếu của từng đáp án khớp chính xác 100% với tỷ lệ bạn đặt. Nếu có lượt gửi bị lỗi mạng, hệ thống sẽ tự động gửi lại cho đến khi đủ số lượt thành công.
-                                                </p>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="campaign-run-controls" style="margin-top: 0;">
-                                            <div class="stats-row">
-                                                <div class="mini-stat"><span id="run-success">0</span> Thành công</div>
-                                                <div class="mini-stat"><span id="run-failed">0</span> Thất bại</div>
-                                                <div class="mini-stat"><span id="run-progress">0/0</span> Tiến độ</div>
-                                            </div>
-                                            <div class="progress-bar-bg" style="margin: 10px 0;">
-                                                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
-                                            </div>
-                                            
-                                            <div style="display: flex; gap: 12px; margin-top: 10px;">
-                                                <button id="btn-start" class="btn btn-success btn-block" style="flex: 1;">
-                                                    Bắt đầu chạy chiến dịch
-                                                </button>
-                                                <button id="btn-stop" class="btn btn-danger btn-block hidden" style="flex: 1;">
-                                                    Dừng chiến dịch
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                <section class="card question-checklist-card">
-                                    <div class="card-header">
-                                        <h2>Danh sách câu hỏi</h2>
-                                        <span class="subtitle" style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 2px;">Bấm vào tên câu hỏi để cuộn nhanh tới vị trí cấu hình</span>
-                                    </div>
-                                    <div class="card-body checklist-body" id="question-checklist-container">
-                                        <!-- Danh sách kiểm tra câu hỏi -->
-                                    </div>
-                                </section>
-
-                                <section class="card terminal-card" style="margin-top: 0px;">
-                                    <div class="card-header flex-header">
-                                        <h2>Nhật ký hoạt động</h2>
-                                        <button id="btn-clear-logs" class="btn btn-secondary btn-xs">Xóa nhật ký</button>
-                                    </div>
-                                    <div class="terminal-body" id="logs-container">
-                                        <div class="log-line system-log">Sẵn sàng. Nhấn "Bắt đầu chạy chiến dịch" sau khi cấu hình xong.</div>
-                                    </div>
-                                </section>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Trạng thái khi chưa tải biểu mẫu -->
-                    <div class="empty-state-card" id="empty-active-state">
-                        <h4>Chưa có biểu mẫu nào đang mở</h4>
-                        <p>Vui lòng chuyển sang mục Trang chủ và nhập đường dẫn Google Form hoặc mã cấu hình để bắt đầu.</p>
-                    </div>
-                </div>
-
-            </div>
+        <div class="form-group">
+          <label data-i18n="login_pass">Mật khẩu</label>
+          <input type="password" id="login-password" value="••••••••" placeholder="Nhập mật khẩu..." />
         </div>
-    </div>
+        <button id="btn-login" class="btn btn-primary btn-block" data-i18n="login_btn">Đăng nhập Studio</button>
+        <p class="auth-switch-text">Chưa có tài khoản? <a href="#" id="switch-to-register">Đăng ký tên hiển thị</a></p>
+      </div>
 
-    <!-- Hộp thoại nhập nhanh tỷ lệ % từ văn bản -->
-    <div id="import-text-modal" class="modal-overlay hidden">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h3>Nhập nhanh tỷ lệ % từ văn bản</h3>
-                <button class="modal-close-btn" id="btn-close-modal">&times;</button>
+      <div id="register-form-container" class="hidden">
+        <div class="form-group">
+          <label>Họ và tên hiển thị</label>
+          <input type="text" id="register-name" placeholder="VD: Nguyễn Văn A" />
+        </div>
+        <div class="form-group">
+          <label>Tên đăng nhập</label>
+          <input type="text" id="register-username" placeholder="Tên đăng nhập viết liền..." />
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="register-password" placeholder="Nhập mật khẩu..." />
+        </div>
+        <button id="btn-register" class="btn btn-primary btn-block">Tạo tài khoản</button>
+        <p class="auth-switch-text">Đã có tài khoản? <a href="#" id="switch-to-login">Quay lại đăng nhập</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MAIN STUDIO WORKSPACE -->
+  <div id="dashboard-screen" class="studio-shell hidden">
+    <aside class="studio-rail" id="studio-rail">
+      <div class="rail-brand">
+        <div class="rail-logo">AF</div>
+        <div>
+          <span class="brand-title">AutoFillForm</span>
+          <span class="brand-sub">Studio Pro · Free 100%</span>
+        </div>
+      </div>
+
+      <nav class="rail-nav">
+        <div class="nav-section-label" data-i18n="nav_fill">ĐIỀN FORM TỰ ĐỘNG</div>
+        <a href="#" class="menu-item active" data-panel="panel-home"><span data-i18n="m_home">Nhập Form & Config</span></a>
+        <a href="#" class="menu-item" data-panel="panel-campaign"><span data-i18n="m_campaign">Cấu hình & Chạy</span><span class="nav-tag">GG + MS</span></a>
+
+        <div class="nav-section-label" data-i18n="nav_tools">CÔNG CỤ AI & NGHIÊN CỨU</div>
+        <a href="#" class="menu-item" data-panel="panel-designer"><span data-i18n="m_designer">Thiết kế Form bằng AI</span><span class="nav-tag">AI</span></a>
+        <a href="#" class="menu-item" data-panel="panel-research"><span data-i18n="m_research">Nghiên cứu SPSS / PLS</span><span class="nav-tag">SEM</span></a>
+        <a href="#" class="menu-item" data-panel="panel-timestamp"><span data-i18n="m_timestamp">Sửa Dấu Thời Gian</span></a>
+
+        <div class="nav-section-label" data-i18n="nav_system">HỆ THỐNG</div>
+        <a href="#" class="menu-item" data-panel="panel-history"><span data-i18n="m_history">Lịch sử đã lưu</span></a>
+        <a href="#" class="menu-item" data-panel="panel-settings"><span data-i18n="m_settings">Cài đặt, AI Key & PWA</span></a>
+      </nav>
+
+      <div class="rail-footer">
+        <div class="free-badge-box">
+          <strong>Chế độ Miễn phí Toàn phần</strong>
+          Không Credit · Chia Tuyệt Đối Hamilton · Auto-Retry · Groq AI sẵn có.
+        </div>
+        <button id="btn-logout" class="btn btn-secondary btn-sm btn-block" data-i18n="logout">Đăng xuất</button>
+      </div>
+    </aside>
+
+    <div class="main-stage">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebar-toggle" class="btn btn-secondary btn-xs">Menu</button>
+          <div class="greeting-box">
+            <h3>Xin chào, <span id="user-display-name">Khách</span></h3>
+            <p id="topbar-subtitle">Hỗ trợ Google Forms, Microsoft Forms, AI, Excel & SPSS</p>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button id="btn-lang-toggle" class="pill-btn" title="Chuyển ngôn ngữ VI/EN">VI / EN</button>
+          <button id="btn-theme-toggle" class="pill-btn" title="Đổi giao diện Sáng / Tối">Giao diện: Tối</button>
+          <div class="avatar-chip" id="user-avatar-chip">AF</div>
+        </div>
+      </header>
+
+      <div class="panel-container">
+        <!-- PANEL 1: HOME / IMPORT FORM -->
+        <section id="panel-home" class="content-panel active">
+          <div class="panel-head">
+            <div>
+              <h2>Khởi tạo biểu mẫu khảo sát</h2>
+              <p>Hỗ trợ link Google Form, Microsoft Forms (forms.office.com / forms.cloud.microsoft), hoặc mã cấu hình CONFIG_2_...</p>
             </div>
-            <div class="modal-body">
-                <p class="description" style="font-size:12.5px; margin-bottom:12px;">
-                    Dán nội dung kịch bản hoặc báo cáo khảo sát có chứa tỷ lệ % của các câu hỏi vào ô bên dưới. Hệ thống sẽ tự động khớp câu hỏi và điền số %.
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3><span class="step-badge">1</span> Dán đường dẫn hoặc Mã cấu hình</h3></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label>Link Google Form / Microsoft Forms hoặc mã CONFIG_...</label>
+                  <div class="input-row">
+                    <input type="text" id="form-url" placeholder="https://docs.google.com/forms/... hoặc https://forms.office.com/r/... hoặc CONFIG_2_..." />
+                    <button id="btn-parse" class="btn btn-primary">
+                      <span id="btn-parse-text">Phân tích biểu mẫu</span>
+                      <span id="btn-parse-spinner" class="hidden">Đang đọc...</span>
+                    </button>
+                  </div>
+                </div>
+                <div id="parse-error" class="error-msg hidden"></div>
+
+                <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-import-json-trigger">Nhập file cấu hình (.json)</button>
+                  <input type="file" id="import-json-file" accept=".json" class="hidden" />
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h3>Điều kiện để biểu mẫu nhận phản hồi</h3></div>
+              <div class="card-body">
+                <ul style="padding-left: 18px; font-size: 13px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
+                  <li><strong>Google Forms:</strong> Mở công khai ("Bất kỳ ai có liên kết"), tắt "Giới hạn ở 1 lần trả lời", không chọn thu thập email "Đã xác minh".</li>
+                  <li><strong>Microsoft Forms:</strong> Vào Thu thập phản hồi → chọn <em>Bất kỳ ai cũng có thể trả lời</em>, tắt "Một phản hồi cho mỗi người".</li>
+                  <li><strong>Rẽ nhánh (Branching):</strong> Hệ thống tự đọc rẽ nhánh của form và bỏ qua đúng các phần không thuộc luồng đi.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PANEL 2: CAMPAIGN WORKSPACE -->
+        <section id="panel-campaign" class="content-panel">
+          <div id="empty-active-state" class="empty-state-card">
+            <h4>Chưa có biểu mẫu nào đang mở</h4>
+            <p>Hãy dán link Google Form hoặc Microsoft Forms tại mục <strong>Nhập Form & Config</strong> để bắt đầu.</p>
+          </div>
+
+          <div id="campaign-workspace" class="hidden">
+            <div class="active-form-banner">
+              <div>
+                <span id="form-platform-badge" class="platform-badge">Google Forms</span>
+                <h2 id="form-title-display" style="font-size: 18px; font-weight: 800;">Tiêu đề biểu mẫu</h2>
+                <p id="form-desc-display" style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;"></p>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button id="btn-sync-form" class="btn btn-secondary btn-sm" title="Đọc lại cấu trúc form nếu bạn vừa sửa trên Google/Microsoft">Đồng bộ Form</button>
+                <button id="btn-preview-data" class="btn btn-cyan btn-sm">Xem trước dữ liệu</button>
+                <button id="btn-save-config" class="btn btn-secondary btn-sm">Lưu vào lịch sử</button>
+                <button id="btn-export-config" class="btn btn-primary btn-sm">Xuất mã CONFIG_2</button>
+                <button id="btn-export-json" class="btn btn-secondary btn-sm">Tải JSON</button>
+              </div>
+            </div>
+
+            <div class="subtab-bar">
+              <button class="subtab-btn active" data-subtab="sub-ratios">1. Tỷ lệ % & Câu trả lời</button>
+              <button class="subtab-btn" data-subtab="sub-rules">2. Ràng buộc Logic & Rẽ nhánh</button>
+              <button class="subtab-btn" data-subtab="sub-schedule">3. Lịch chạy Rải giờ & Ban đêm</button>
+              <button class="subtab-btn" data-subtab="sub-full-ai">4. Tự động hoàn toàn bằng AI</button>
+              <button class="subtab-btn" data-subtab="sub-excel">5. Điền từ file Excel / CSV</button>
+            </div>
+
+            <div class="campaign-grid">
+              <div class="campaign-left-col">
+                <!-- SUBTAB 1: RATIOS & TEXT -->
+                <div id="sub-ratios" class="subtab-pane active">
+                  <div class="card">
+                    <div class="card-header">
+                      <h3><span class="step-badge">2</span> Cấu hình tỷ lệ % & Dữ liệu văn bản</h3>
+                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <select id="distribution-mode-select" style="width: auto; padding: 6px 10px; font-size: 12px;">
+                          <option value="absolute">Chia Tuyệt Đối 100% (Hamilton)</option>
+                          <option value="natural_positive">Tự nhiên (Xu hướng Tích cực)</option>
+                          <option value="natural_neutral">Tự nhiên (Trung lập)</option>
+                          <option value="natural_negative">Tự nhiên (Khắt khe)</option>
+                        </select>
+                        <button id="btn-auto-fill-percent" class="btn btn-secondary btn-sm">Chia đều %</button>
+                        <button id="btn-import-text-trigger" class="btn btn-secondary btn-sm">Nhập % từ văn bản</button>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="ai-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                          <strong style="font-size: 13.5px;">Trợ lý AI phân bổ tỷ lệ % & Sinh câu tự luận</strong>
+                          <span class="question-badge" style="color: var(--accent);">Groq AI Miễn phí</span>
+                        </div>
+                        <div class="input-row">
+                          <textarea id="ai-prompt-input" rows="2" placeholder="VD: Đối tượng sinh viên năm 2-4, 80% hài lòng, các câu tự luận trả lời tự nhiên... (hoặc để trống để AI tự suy luận)"></textarea>
+                          <button id="btn-ai-distribute" class="btn btn-ai" type="button">
+                            <span id="btn-ai-text">Phân tích & Điền AI</span>
+                            <span id="btn-ai-spinner" class="hidden">Đang xử lý...</span>
+                          </button>
+                        </div>
+                        <div class="chip-row">
+                          <button type="button" class="chip-btn ai-chip" data-prompt="Tự động phân tích tiêu đề và câu hỏi để chia tỷ lệ % và sinh dữ liệu thực tế nhất.">Tự hiểu theo Form</button>
+                          <button type="button" class="chip-btn ai-chip" data-prompt="Đa số đánh giá rất hài lòng và tích cực (80-90%), câu tự luận khen ngợi tự nhiên.">Đánh giá tích cực 85%</button>
+                          <button type="button" class="chip-btn ai-chip" data-prompt="Đối tượng sinh viên đại học (K18-K21), điền Họ tên, MSSV, Lớp/Khoa hợp lý.">Đối tượng Sinh viên</button>
+                          <button type="button" class="chip-btn ai-chip" data-prompt="Đối tượng doanh nghiệp và nhân viên văn phòng tại Việt Nam, trả lời khách quan.">Doanh nghiệp / Văn phòng</button>
+                        </div>
+                        <div id="ai-status-msg" class="hidden" style="margin-top: 10px; font-size: 12.5px;"></div>
+                      </div>
+
+                      <div id="form-questions-container"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SUBTAB 2: LOGIC RULES -->
+                <div id="sub-rules" class="subtab-pane">
+                  <div class="card">
+                    <div class="card-header">
+                      <h3>Ràng buộc logic giữa các câu hỏi</h3>
+                      <div style="display: flex; gap: 8px;">
+                        <button id="btn-ai-suggest-rules" class="btn btn-ai btn-sm">AI gợi ý quy tắc (Free)</button>
+                        <button id="btn-validate-rules" class="btn btn-secondary btn-sm">Kiểm tra mâu thuẫn</button>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="info-banner">
+                        Đặt quy tắc để giữ câu trả lời nhất quán (VD: Nếu <strong>Nghề nghiệp = Sinh viên</strong> thì <strong>Thu nhập</strong> bắt buộc chọn <em>Dưới 5 triệu</em>). Hệ thống tự kiểm tra trùng lặp, mâu thuẫn và vòng lặp.
+                      </div>
+
+                      <div class="grid-2" style="background: var(--bg-elevated); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 16px;">
+                        <div class="form-group">
+                          <label>Nếu câu nguồn:</label>
+                          <select id="rule-src-q"></select>
+                        </div>
+                        <div class="form-group">
+                          <label>Có đáp án là:</label>
+                          <select id="rule-src-choice"></select>
+                        </div>
+                        <div class="form-group">
+                          <label>Thì câu đích:</label>
+                          <select id="rule-dst-q"></select>
+                        </div>
+                        <div class="form-group">
+                          <label>Hành động & Đáp án đích:</label>
+                          <div style="display: flex; gap: 8px;">
+                            <select id="rule-op" style="width: 140px;">
+                              <option value="require">Bắt buộc chọn</option>
+                              <option value="exclude">Loại trừ</option>
+                            </select>
+                            <select id="rule-dst-choice"></select>
+                          </div>
+                        </div>
+                        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+                          <button id="btn-add-rule" class="btn btn-primary btn-sm">+ Thêm quy tắc</button>
+                        </div>
+                      </div>
+
+                      <div id="rules-validation-msg" class="hidden" style="margin-bottom: 12px;"></div>
+                      <div id="rules-list-container"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SUBTAB 3: SPREAD SCHEDULER & NIGHT MODE -->
+                <div id="sub-schedule" class="subtab-pane">
+                  <div class="card">
+                    <div class="card-header"><h3>Cấu hình Điền rải theo giờ, Hẹn giờ & Ban đêm</h3></div>
+                    <div class="card-body">
+                      <div class="form-group">
+                        <label>Chế độ lập lịch gửi</label>
+                        <select id="sched-mode">
+                          <option value="immediate">Chạy liên tục (theo độ trễ giây)</option>
+                          <option value="window">Điền rải theo tổng thời gian hoàn thành</option>
+                          <option value="interval">Điền rải theo khoảng giãn cách giữa từng lượt</option>
+                        </select>
+                      </div>
+
+                      <div id="sched-window-box" class="hidden form-group">
+                        <label>Tổng thời gian hoàn thành (từ 15 phút đến 30 ngày)</label>
+                        <div class="chip-row" style="margin-bottom: 10px;">
+                          <button type="button" class="chip-btn sched-win-preset" data-min="15">15 phút</button>
+                          <button type="button" class="chip-btn sched-win-preset is-on" data-min="60">1 giờ</button>
+                          <button type="button" class="chip-btn sched-win-preset" data-min="120">2 giờ</button>
+                          <button type="button" class="chip-btn sched-win-preset" data-min="720">12 giờ</button>
+                          <button type="button" class="chip-btn sched-win-preset" data-min="1440">24 giờ</button>
+                          <button type="button" class="chip-btn sched-win-preset" data-min="10080">7 ngày</button>
+                        </div>
+                        <input type="number" id="sched-window-minutes" value="60" min="1" max="43200" />
+                      </div>
+
+                      <div id="sched-interval-box" class="hidden form-group">
+                        <label>Khoảng giãn cách mỗi lượt (giây)</label>
+                        <div class="chip-row" style="margin-bottom: 10px;">
+                          <button type="button" class="chip-btn sched-int-preset is-on" data-min="60" data-max="180">1–3 phút</button>
+                          <button type="button" class="chip-btn sched-int-preset" data-min="180" data-max="300">3–5 phút</button>
+                          <button type="button" class="chip-btn sched-int-preset" data-min="300" data-max="600">5–10 phút</button>
+                          <button type="button" class="chip-btn sched-int-preset" data-min="600" data-max="1200">10–20 phút</button>
+                        </div>
+                        <div class="grid-2">
+                          <div><label>Tối thiểu (giây)</label><input type="number" id="sched-int-min" value="60" min="1" /></div>
+                          <div><label>Tối đa (giây)</label><input type="number" id="sched-int-max" value="180" min="1" /></div>
+                        </div>
+                      </div>
+
+                      <div class="grid-3" style="margin-top: 12px;">
+                        <div class="form-group">
+                          <label>Hẹn giờ bắt đầu (Để trống = chạy ngay)</label>
+                          <input type="datetime-local" id="sched-start-at" />
+                        </div>
+                        <div class="form-group">
+                          <label>Nhịp phân bổ</label>
+                          <select id="sched-rhythm">
+                            <option value="natural">Ngẫu nhiên tự nhiên</option>
+                            <option value="even">Rải đều chính xác</option>
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label>Hoạt động ban đêm (22h–7h)</label>
+                          <select id="sched-night-mode">
+                            <option value="normal">Bình thường cả ngày</option>
+                            <option value="pause">Tạm dừng 22h–7h</option>
+                            <option value="reduce">Giảm sâu mật độ ban đêm</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SUBTAB 4: FULL AUTO AI MODE -->
+                <div id="sub-full-ai" class="subtab-pane">
+                  <div class="card">
+                    <div class="card-header"><h3>Tự động hoàn toàn bằng AI (Mô tả người trả lời)</h3></div>
+                    <div class="card-body">
+                      <div class="info-banner">
+                        Không cần tự đặt tỷ lệ % hay nhập câu tự luận: chỉ cần mô tả nhóm người trả lời, AI sẽ đóng vai từng nhân vật nhất quán từ đầu đến cuối form và tự gửi theo tốc độ bạn chọn.
+                      </div>
+                      <div class="form-group">
+                        <label>Mô tả nhóm người trả lời (Nhân khẩu học, bối cảnh, thái độ)</label>
+                        <textarea id="full-ai-persona" rows="3" placeholder="VD: Sinh viên năm 1-4 các trường kinh tế tại Hà Nội & TP.HCM, khoảng 65% nữ, đa số mua hàng Shopee 2-4 lần/tháng..."></textarea>
+                      </div>
+                      <div class="grid-2">
+                        <div class="form-group">
+                          <label>Xu hướng trả lời</label>
+                          <select id="full-ai-trend">
+                            <option value="natural">Tự nhiên (Đa dạng thực tế)</option>
+                            <option value="positive">Tích cực (80-90% hài lòng)</option>
+                            <option value="neutral">Trung lập khách quan</option>
+                            <option value="strict">Khắt khe / Phê bình</option>
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label>Số người cần AI mô phỏng & gửi</label>
+                          <input type="number" id="full-ai-count" value="20" min="1" max="1000" />
+                        </div>
+                      </div>
+                      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button id="btn-full-ai-preview" class="btn btn-cyan">Xem thử 3 người (Miễn phí)</button>
+                        <button id="btn-full-ai-start" class="btn btn-ai">Chạy Tự động bằng AI</button>
+                      </div>
+                      <div id="full-ai-preview-box" style="margin-top: 16px;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SUBTAB 5: EXCEL / CSV IMPORT -->
+                <div id="sub-excel" class="subtab-pane">
+                  <div class="card">
+                    <div class="card-header">
+                      <h3>Điền Google / Microsoft Form từ file Excel hoặc CSV</h3>
+                      <button id="btn-download-excel-tpl" class="btn btn-secondary btn-sm">Tải file mẫu (.xlsx)</button>
+                    </div>
+                    <div class="card-body">
+                      <div class="info-banner">
+                        Hỗ trợ .xlsx và .csv tối đa 5.000 dòng. Mỗi dòng thành 1 lượt gửi. Cột không có trong file sẽ tự động lấy theo tỷ lệ bạn cấu hình ở Tab 1.
+                      </div>
+                      <div class="input-row" style="margin-bottom: 14px;">
+                        <input type="file" id="excel-file-input" accept=".xlsx,.xlsm,.csv" />
+                        <button id="btn-parse-excel" class="btn btn-primary">Đọc & Kiểm tra file</button>
+                      </div>
+                      <div id="excel-result-box" class="hidden">
+                        <div id="excel-stats-summary" class="kpi-grid"></div>
+                        <div id="excel-mapping-box" style="margin-bottom: 14px;"></div>
+                        <div id="excel-errors-box" style="margin-bottom: 14px;"></div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                          <label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                            <input type="checkbox" id="excel-skip-errors" checked style="width: auto;" /> Bỏ qua dòng lỗi và chạy các dòng hợp lệ
+                          </label>
+                          <button id="btn-start-excel" class="btn btn-primary">Chạy chiến dịch từ Excel</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN: RUNNER & CHECKLIST -->
+              <div class="campaign-right-col">
+                <div class="card">
+                  <div class="card-header"><h3><span class="step-badge">3</span> Điều khiển Chiến dịch</h3></div>
+                  <div class="card-body">
+                    <div class="grid-2" style="gap: 10px;">
+                      <div class="form-group">
+                        <label>Số lượt cần chạy</label>
+                        <input type="number" id="campaign-submissions" value="10" min="1" max="5000" />
+                      </div>
+                      <div class="form-group">
+                        <label>Độ trễ chạy liền (giây)</label>
+                        <input type="number" id="campaign-delay" value="1.0" min="0.1" step="0.1" />
+                      </div>
+                    </div>
+                    <div id="runner-eta-info" style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;"></div>
+
+                    <div class="stats-row">
+                      <div class="mini-stat"><span id="run-success">0</span>Thành công</div>
+                      <div class="mini-stat"><span id="run-failed">0</span>Lỗi bù</div>
+                      <div class="mini-stat"><span id="run-progress">0/0</span>Tiến độ</div>
+                    </div>
+                    <div class="progress-bar-bg"><div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div></div>
+
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                      <button id="btn-start" class="btn btn-primary" style="flex: 1;">Bắt đầu chạy</button>
+                      <button id="btn-skip-wait" class="btn btn-cyan hidden">Chạy ngay</button>
+                      <button id="btn-stop" class="btn btn-danger hidden" style="flex: 1;">Dừng</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-header"><h3>Danh sách câu hỏi</h3></div>
+                  <div class="card-body checklist-body" id="question-checklist-container"></div>
+                </div>
+
+                <div class="card">
+                  <div class="card-header">
+                    <h3>Nhật ký trực tiếp</h3>
+                    <button id="btn-clear-logs" class="btn btn-secondary btn-xs">Xóa log</button>
+                  </div>
+                  <div class="terminal-body" id="logs-container">
+                    <div class="log-line system-log">Sẵn sàng khởi chạy.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PANEL 3: AI FORM DESIGNER -->
+        <section id="panel-designer" class="content-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Thiết kế Google Form bằng AI</h2>
+              <p>Mô tả khảo sát → AI tạo cấu trúc đủ phần, thang Likert, mã biến NCKH, sơ đồ rẽ nhánh → Xuất Apps Script tạo Google Form thật trong 10 giây.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button id="fd-new-btn" class="btn btn-secondary btn-sm">+ Thiết kế mới</button>
+              <button id="fd-export-gs-btn" class="btn btn-primary btn-sm hidden">Tạo Google Form (Apps Script)</button>
+            </div>
+          </div>
+
+          <div id="fd-brief-card" class="card">
+            <div class="card-body">
+              <div class="form-group">
+                <label>Mục đích biểu mẫu</label>
+                <div class="chip-row" id="fd-purpose-chips">
+                  <button type="button" class="chip-btn is-on" data-purpose="general">Khảo sát thường</button>
+                  <button type="button" class="chip-btn" data-purpose="research">Nghiên cứu khoa học (NCKH / Luận văn)</button>
+                  <button type="button" class="chip-btn" data-purpose="customer">Khảo sát khách hàng</button>
+                  <button type="button" class="chip-btn" data-purpose="feedback">Đánh giá / Góp ý</button>
+                  <button type="button" class="chip-btn" data-purpose="event">Đăng ký sự kiện</button>
+                  <button type="button" class="chip-btn" data-purpose="quiz">Bài kiểm tra</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Mô tả bạn muốn khảo sát về điều gì?</label>
+                <textarea id="fd-topic" rows="3" placeholder="VD: Khảo sát các yếu tố ảnh hưởng đến ý định mua sắm trực tuyến của sinh viên đại học..."></textarea>
+                <div class="chip-row">
+                  <button type="button" class="chip-btn fd-ex" data-ex="research">Mẫu: Luận văn NCKH</button>
+                  <button type="button" class="chip-btn fd-ex" data-ex="customer">Mẫu: Quán cà phê</button>
+                  <button type="button" class="chip-btn fd-ex" data-ex="event">Mẫu: Hội thảo AI</button>
+                </div>
+              </div>
+
+              <div id="fd-research-extra" class="form-group hidden">
+                <label>Các biến nghiên cứu & Giả thuyết (NCKH)</label>
+                <textarea id="fd-constructs" rows="2" placeholder="VD: Biến độc lập: Chất lượng, Giá cả, Uy tín. Biến phụ thuộc: Sự hài lòng, Ý định mua lại."></textarea>
+              </div>
+
+              <div class="grid-3">
+                <div class="form-group">
+                  <label>Đối tượng khảo sát</label>
+                  <input type="text" id="fd-audience" placeholder="VD: Sinh viên năm 1-4" />
+                </div>
+                <div class="form-group">
+                  <label>Độ dài</label>
+                  <select id="fd-length">
+                    <option value="short">Ngắn (~10 câu)</option>
+                    <option value="medium" selected>Vừa (~20 câu)</option>
+                    <option value="long">Dài (~30 câu)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Ngôn ngữ form</label>
+                  <select id="fd-lang">
+                    <option value="vi" selected>Tiếng Việt</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
+              </div>
+
+              <button id="fd-generate-btn" class="btn btn-ai">Thiết kế Form bằng AI</button>
+            </div>
+          </div>
+
+          <div id="fd-editor-area" class="hidden">
+            <div class="subtab-bar" style="justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 6px;">
+                <button class="subtab-btn active fd-view-btn" data-view="edit">Chỉnh sửa câu hỏi</button>
+                <button class="subtab-btn fd-view-btn" data-view="map">Sơ đồ rẽ nhánh</button>
+                <button class="subtab-btn fd-view-btn" data-view="preview">Xem như người trả lời</button>
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <select id="fd-code-style" style="width: auto; padding: 6px 10px; font-size: 12px;">
+                  <option value="">Ẩn mã biến</option>
+                  <option value="bracket">[TL1] Câu hỏi</option>
+                  <option value="dot">TL1. Câu hỏi</option>
+                  <option value="dash">TL1 - Câu hỏi</option>
+                </select>
+                <button id="fd-back-brief" class="btn btn-secondary btn-xs">Thiết kế lại</button>
+              </div>
+            </div>
+            <div id="fd-canvas"></div>
+          </div>
+        </section>
+
+        <!-- PANEL 4: RESEARCH SPSS / SMARTPLS / AMOS -->
+        <section id="panel-research" class="content-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Phân hệ Nghiên cứu Định lượng (SPSS · SmartPLS · AMOS · STATA)</h2>
+              <p>Vẽ mô hình cấu trúc, sinh dữ liệu mô phỏng hoặc Import CSV, kiểm định Cronbach Alpha, EFA, CR/AVE, HTMT, VIF, Bootstrapping & Xuất file .sps / APA Word.</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="res-ai-suggest-btn" class="btn btn-ai btn-sm">AI gợi ý từ Form đang mở</button>
+              <button id="res-demo-model-btn" class="btn btn-secondary btn-sm">Nạp mô hình mẫu</button>
+            </div>
+          </div>
+
+          <div class="info-banner">
+            <strong>Lưu ý liêm chính học thuật:</strong> Dữ liệu sinh từ phân hệ này là dữ liệu mô phỏng dùng để kiểm thử bảng hỏi, luyện chạy SPSS/SmartPLS/AMOS hoặc giảng dạy — không thay thế dữ liệu thu thập từ người trả lời thật.
+          </div>
+
+          <div class="grid-2">
+            <!-- Left: Model Builder -->
+            <div class="card">
+              <div class="card-header">
+                <h3>1. Biến & Thang đo (Constructs)</h3>
+                <button id="res-add-construct" class="btn btn-secondary btn-xs">+ Thêm biến</button>
+              </div>
+              <div class="card-body">
+                <div class="grid-2" style="margin-bottom: 12px;">
+                  <div class="form-group">
+                    <label>Cỡ mẫu mô phỏng (N)</label>
+                    <input type="number" id="res-sample-size" value="250" min="30" max="2000" />
+                  </div>
+                  <div class="form-group">
+                    <label>Thang Likert</label>
+                    <select id="res-scale-points">
+                      <option value="5" selected>Likert 5 mức (1–5)</option>
+                      <option value="7">Likert 7 mức (1–7)</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="res-constructs-list"></div>
+              </div>
+            </div>
+
+            <!-- Right: Structural Paths & Actions -->
+            <div class="card">
+              <div class="card-header">
+                <h3>2. Giả thuyết Đường dẫn (Paths) & Import CSV</h3>
+                <button id="res-add-path" class="btn btn-secondary btn-xs">+ Thêm giả thuyết</button>
+              </div>
+              <div class="card-body">
+                <div id="res-paths-list" style="margin-bottom: 14px;"></div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 14px; margin-top: 10px;">
+                  <label style="font-size: 12.5px; font-weight: 700; display: block; margin-bottom: 6px;">Hoặc Import file CSV có sẵn để kiểm định:</label>
+                  <div class="input-row" style="margin-bottom: 8px;">
+                    <input type="file" id="res-csv-file" accept=".csv" />
+                    <input type="text" id="res-csv-exclude" placeholder="Loại dòng VD: 12, 18-25" style="max-width: 190px;" />
+                    <button id="res-import-csv-btn" class="btn btn-secondary btn-sm">Import CSV</button>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px;">
+                  <button id="res-run-btn" class="btn btn-primary">Sinh dữ liệu & Chạy kiểm định</button>
+                  <button id="res-push-form-btn" class="btn btn-cyan hidden">Đẩy sang Trình điền Form</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Diagnostics & Exports -->
+          <div id="res-output-area" class="hidden">
+            <div class="card">
+              <div class="card-header">
+                <h3>3. Kết quả Kiểm định & Xuất file</h3>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <button class="btn btn-secondary btn-xs res-export-btn" data-fmt="coded_csv">CSV Mã số</button>
+                  <button class="btn btn-secondary btn-xs res-export-btn" data-fmt="labelled_csv">CSV Nhãn chữ</button>
+                  <button class="btn btn-primary btn-xs res-export-btn" data-fmt="spss_sps">IBM SPSS (.sps)</button>
+                  <button class="btn btn-secondary btn-xs res-export-btn" data-fmt="stata_do">STATA (.do)</button>
+                  <button class="btn btn-cyan btn-xs res-export-btn" data-fmt="apa_doc">Báo cáo APA (.doc)</button>
+                </div>
+              </div>
+              <div class="card-body" id="res-analysis-body"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PANEL 5: GOOGLE SHEET TIMESTAMP EDITOR -->
+        <section id="panel-timestamp" class="content-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Sửa Dấu Thời Gian Google Sheet (Miễn phí)</h2>
+              <p>Đọc cột Dấu thời gian từ link Google Sheet hoặc file CSV/XLSX, rải lại mốc thời gian tăng dần tự nhiên (có nghỉ ban đêm), xem trước rồi xuất file hoặc tạo Apps Script.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3>1. Kết nối Google Sheet hoặc Tải file</h3></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label>Link Google Sheet (Chia sẻ: Bất kỳ ai có liên kết đều có thể xem/sửa)</label>
+                  <div class="input-row">
+                    <input type="text" id="ts-sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." />
+                    <button id="ts-load-btn" class="btn btn-primary">Đọc Sheet</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Hoặc tải lên file CSV / XLSX đã tải từ Google Sheets</label>
+                  <div class="input-row">
+                    <input type="file" id="ts-file-input" accept=".csv,.xlsx" />
+                    <button id="ts-load-file-btn" class="btn btn-secondary">Đọc file</button>
+                  </div>
+                </div>
+                <div id="ts-loaded-info" class="hidden info-banner"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h3>2. Cấu hình thời gian mới</h3></div>
+              <div class="card-body">
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Chọn lượt cần sửa</label>
+                    <select id="ts-sel-mode">
+                      <option value="all">Tất cả lượt</option>
+                      <option value="range">Phạm vi / Rời nhau (VD: 1-20, 25)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Phạm vi dòng (nếu chọn)</label>
+                    <input type="text" id="ts-range-spec" placeholder="VD: 1-50, 62, 70-80" />
+                  </div>
+                </div>
+                <div class="grid-3">
+                  <div class="form-group">
+                    <label>Cách tính</label>
+                    <select id="ts-sched-mode">
+                      <option value="window">Theo tổng khoảng giờ</option>
+                      <option value="interval">Giãn cách từng lượt (giây)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Bắt đầu từ</label>
+                    <input type="datetime-local" id="ts-start-at" />
+                  </div>
+                  <div class="form-group">
+                    <label>Tổng phút / Min-Max giây</label>
+                    <input type="number" id="ts-window-min" value="180" min="1" />
+                  </div>
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Nhịp</label>
+                    <select id="ts-rhythm">
+                      <option value="natural">Ngẫu nhiên tự nhiên</option>
+                      <option value="even">Rải đều</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Ban đêm (22h–7h)</label>
+                    <select id="ts-night">
+                      <option value="normal">Bình thường</option>
+                      <option value="pause">Tạm dừng 22h–7h</option>
+                      <option value="reduce">Giảm sâu ban đêm</option>
+                    </select>
+                  </div>
+                </div>
+                <button id="ts-preview-btn" class="btn btn-cyan">Xem trước thay đổi</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="ts-preview-area" class="hidden card">
+            <div class="card-header">
+              <h3>3. Xem trước & Áp dụng</h3>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button id="ts-export-csv" class="btn btn-primary btn-sm">Tải CSV mới</button>
+                <button id="ts-export-xlsx" class="btn btn-secondary btn-sm">Tải XLSX mới</button>
+                <button id="ts-copy-gs" class="btn btn-cyan btn-sm">Copy Apps Script sửa trực tiếp Sheet</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-scroll" id="ts-preview-table"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PANEL 6: SAVED FORMS HISTORY -->
+        <section id="panel-history" class="content-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Lịch sử Biểu mẫu & Bản thiết kế đã lưu</h2>
+              <p>Toàn bộ biểu mẫu đã phân tích, cấu hình tỷ lệ và bản thiết kế AI lưu an toàn trên trình duyệt của bạn.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-nav-to-home">+ Nhập biểu mẫu mới</button>
+          </div>
+          <div id="empty-manage-state" class="empty-state-card">
+            <h4>Chưa có biểu mẫu nào được lưu</h4>
+            <p>Phân tích một biểu mẫu ở trang đầu tiên để lưu vào lịch sử.</p>
+          </div>
+          <div id="saved-forms-list-container"></div>
+        </section>
+
+        <!-- PANEL 7: SETTINGS, GROQ KEY & PWA -->
+        <section id="panel-settings" class="content-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Cài đặt Hệ thống, AI Key & Ứng dụng PWA</h2>
+              <p>Tùy chỉnh Groq API Key riêng (tùy chọn), cài AutoFillForm lên màn hình chính và bật thông báo khi chiến dịch hoàn tất.</p>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3>Cấu hình Groq AI Key (Tùy chọn)</h3></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label>Groq API Key cá nhân (Để trống sẽ dùng Key miễn phí tích hợp sẵn)</label>
+                  <input type="password" id="setting-groq-key" placeholder="gsk_..." />
+                </div>
+                <button id="btn-save-settings" class="btn btn-primary btn-sm">Lưu cài đặt</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><h3>Cài đặt App (PWA) & Thông báo</h3></div>
+              <div class="card-body">
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                  Bật thông báo trình duyệt để nhận cảnh báo ngay khi chiến dịch điền form hoàn thành hoặc AI tạo xong dữ liệu.
                 </p>
-                <textarea id="import-text-area" placeholder="Dán văn bản chứa câu hỏi và tỷ lệ % tại đây...&#10;&#10;Ví dụ:&#10;Câu 1: Bạn đang sinh sống ở đâu?&#10;- Hà Nội: 70%&#10;- TP. Hồ Chí Minh: 20%&#10;- Khác: 10%"></textarea>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button id="btn-enable-notif" class="btn btn-cyan btn-sm">Bật & Thử Thông báo</button>
+                  <button id="btn-install-pwa" class="btn btn-secondary btn-sm hidden">Cài App lên Thiết bị</button>
+                </div>
+                <p id="pwa-status-text" style="font-size: 12px; color: var(--text-hint); margin-top: 10px;"></p>
+              </div>
             </div>
-            <div class="modal-footer">
-                <button id="btn-cancel-import" class="btn btn-secondary btn-sm">Đóng</button>
-                <button id="btn-submit-import" class="btn btn-primary btn-sm">Áp dụng tỷ lệ %</button>
-            </div>
-        </div>
+          </div>
+        </section>
+      </div>
     </div>
+  </div>
 
-    <script src="/static/js/app.js?v=2.0"></script>
+  <!-- MODAL: QUICK TEXT IMPORT -->
+  <div id="import-text-modal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>Nhập nhanh tỷ lệ % từ văn bản</h3>
+        <button class="modal-close-btn" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 10px;">
+          Dán báo cáo có tỷ lệ % vào đây (VD: Câu 1: Bạn ở đâu? - Hà Nội: 70% - TP.HCM: 30%).
+        </p>
+        <textarea id="import-text-area" rows="10" placeholder="Câu 1: ..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-import" class="btn btn-secondary btn-sm">Đóng</button>
+        <button id="btn-submit-import" class="btn btn-primary btn-sm">Áp dụng tỷ lệ %</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GENERAL PREVIEW / CODE / DIFF -->
+  <div id="generic-modal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="generic-modal-title">Thông tin</h3>
+        <button class="modal-close-btn" id="generic-modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="generic-modal-body"></div>
+      <div class="modal-footer" id="generic-modal-footer">
+        <button id="generic-modal-ok" class="btn btn-primary btn-sm">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js?v=3.0"></script>
+  <script src="/static/js/designer.js?v=3.0"></script>
+  <script src="/static/js/research.js?v=3.0"></script>
+  <script src="/static/js/tools.js?v=3.0"></script>
 </body>
 </html>

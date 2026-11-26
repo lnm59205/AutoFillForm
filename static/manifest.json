@@ -1,0 +1,16 @@
+{
+  "name": "AutoFillForm Studio",
+  "short_name": "AutoFillForm",
+  "description": "Nền tảng tự động hóa khảo sát Google Forms & Microsoft Forms, Thiết kế Form AI, và Mô phỏng Nghiên cứu SPSS/PLS-SEM miễn phí.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d11",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%23090d11'/%3E%3Crect x='16' y='16' width='160' height='160' rx='34' fill='%2310b981' fill-opacity='0.14' stroke='%2310b981' stroke-width='6'/%3E%3Cpath d='M58 98l26 26 52-56' fill='none' stroke='%2310b981' stroke-width='16' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
