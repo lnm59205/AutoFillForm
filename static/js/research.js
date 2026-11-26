@@ -34,9 +34,9 @@
       cList.innerHTML = modelSpec.constructs.map((c, ci) => `
         <div class="question-item" style="padding:12px;">
           <div class="compact-row">
-            <input type="text" class="rc-code" data-ci="${ci}" value="${esc(c.code)}" placeholder="Mã" style="max-width:72px;" />
-            <input type="text" class="rc-name" data-ci="${ci}" value="${esc(c.name)}" placeholder="Tên biến" />
-            <select class="rc-role" data-ci="${ci}" style="max-width:112px;">
+            <input type="text" class="rc-code" data-ci="${ci}" value="${esc(c.code)}" placeholder="Mã" style="max-width:68px;" />
+            <input type="text" class="rc-name" data-ci="${ci}" value="${esc(c.name)}" placeholder="Tên biến" style="flex:1 1 130px;" />
+            <select class="rc-role" data-ci="${ci}" style="max-width:132px; flex:0 0 auto;">
               <option value="IV" ${c.role === 'IV' ? 'selected' : ''}>Độc lập (IV)</option>
               <option value="MED" ${c.role === 'MED' ? 'selected' : ''}>Trung gian</option>
               <option value="MOD" ${c.role === 'MOD' ? 'selected' : ''}>Điều tiết</option>
@@ -46,12 +46,12 @@
           </div>
           <div style="font-size:12px;">
             ${(c.items || []).map((it, ii) => `
-              <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
-                <input type="text" class="ri-code" data-ci="${ci}" data-ii="${ii}" value="${esc(it.code)}" style="max-width:75px; padding:4px 6px; font-size:12px;" />
-                <input type="text" class="ri-label" data-ci="${ci}" data-ii="${ii}" value="${esc(it.label)}" style="padding:4px 6px; font-size:12px;" />
-                <label style="font-size:11px; white-space:nowrap;"><input type="checkbox" class="ri-rev" data-ci="${ci}" data-ii="${ii}" ${it.reverse ? 'checked' : ''} style="width:auto;" /> Đảo</label>
-                <label style="font-size:11px; white-space:nowrap;"><input type="checkbox" class="ri-drop" data-ci="${ci}" data-ii="${ii}" ${it.dropped ? 'checked' : ''} style="width:auto;" /> Loại L2</label>
-                <button class="btn btn-secondary btn-xs ri-del" data-ci="${ci}" data-ii="${ii}">×</button>
+              <div class="compact-row" style="margin-bottom:5px;">
+                <input type="text" class="ri-code" data-ci="${ci}" data-ii="${ii}" value="${esc(it.code)}" style="max-width:68px; padding:5px 7px; font-size:12px;" />
+                <input type="text" class="ri-label" data-ci="${ci}" data-ii="${ii}" value="${esc(it.label)}" style="padding:5px 7px; font-size:12px;" />
+                <label style="font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; color:var(--text-muted);"><input type="checkbox" class="ri-rev" data-ci="${ci}" data-ii="${ii}" ${it.reverse ? 'checked' : ''} /> Đảo</label>
+                <label style="font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; color:var(--text-muted);"><input type="checkbox" class="ri-drop" data-ci="${ci}" data-ii="${ii}" ${it.dropped ? 'checked' : ''} /> Loại L2</label>
+                <button class="btn btn-danger btn-xs ri-del" data-ci="${ci}" data-ii="${ii}">×</button>
               </div>
             `).join('')}
             <button class="btn btn-secondary btn-xs ri-add" data-ci="${ci}">+ Item</button>

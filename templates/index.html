@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AutoFillForm Studio</title>
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#10b981" />
+  <meta name="theme-color" content="#6366f1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=3.2" />
+  <link rel="stylesheet" href="/static/css/style.css?v=4.0" />
 </head>
 <body>
   <!-- 1. AUTH -->
   <div id="login-screen" class="login-overlay">
     <div class="login-card">
       <div class="login-header">
-        <span class="brand-pill">MIỄN PHÍ 100%</span>
+        <span class="brand-pill">FREE EDITION · KHÔNG GIỚI HẠN</span>
         <h2>AutoFillForm Studio</h2>
         <p>Google Forms · Microsoft Forms · AI · SPSS</p>
       </div>
@@ -67,17 +67,55 @@
 
       <nav class="rail-nav">
         <div class="nav-section-label" data-i18n="nav_fill">ĐIỀN FORM</div>
-        <a href="#" class="menu-item active" data-panel="panel-home"><span data-i18n="m_home">Nhập Form</span></a>
-        <a href="#" class="menu-item" data-panel="panel-campaign"><span data-i18n="m_campaign">Chiến dịch</span><span class="nav-tag">GG/MS</span></a>
+        <a href="#" class="menu-item active" data-panel="panel-home">
+          <span class="menu-item-left">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            <span data-i18n="m_home">Nhập Form</span>
+          </span>
+        </a>
+        <a href="#" class="menu-item" data-panel="panel-campaign">
+          <span class="menu-item-left">
+            <svg class="ico" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span data-i18n="m_campaign">Chiến dịch</span>
+          </span>
+          <span class="nav-tag">GG/MS</span>
+        </a>
 
         <div class="nav-section-label" data-i18n="nav_tools">CÔNG CỤ</div>
-        <a href="#" class="menu-item" data-panel="panel-designer"><span data-i18n="m_designer">Thiết kế Form AI</span><span class="nav-tag">AI</span></a>
-        <a href="#" class="menu-item" data-panel="panel-research"><span data-i18n="m_research">SPSS / SmartPLS</span><span class="nav-tag">SEM</span></a>
-        <a href="#" class="menu-item" data-panel="panel-timestamp"><span data-i18n="m_timestamp">Sửa Giờ Sheet</span></a>
+        <a href="#" class="menu-item" data-panel="panel-designer">
+          <span class="menu-item-left">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6z"/></svg>
+            <span data-i18n="m_designer">Thiết kế Form AI</span>
+          </span>
+          <span class="nav-tag">AI</span>
+        </a>
+        <a href="#" class="menu-item" data-panel="panel-research">
+          <span class="menu-item-left">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/></svg>
+            <span data-i18n="m_research">SPSS / SmartPLS</span>
+          </span>
+          <span class="nav-tag">SEM</span>
+        </a>
+        <a href="#" class="menu-item" data-panel="panel-timestamp">
+          <span class="menu-item-left">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+            <span data-i18n="m_timestamp">Sửa Giờ Sheet</span>
+          </span>
+        </a>
 
         <div class="nav-section-label" data-i18n="nav_system">HỆ THỐNG</div>
-        <a href="#" class="menu-item" data-panel="panel-history"><span data-i18n="m_history">Đã lưu</span></a>
-        <a href="#" class="menu-item" data-panel="panel-settings"><span data-i18n="m_settings">Cài đặt & PWA</span></a>
+        <a href="#" class="menu-item" data-panel="panel-history">
+          <span class="menu-item-left">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/></svg>
+            <span data-i18n="m_history">Đã lưu</span>
+          </span>
+        </a>
+        <a href="#" class="menu-item" data-panel="panel-settings">
+          <span class="menu-item-left">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09c-.658.003-1.25.396-1.51 1z"/></svg>
+            <span data-i18n="m_settings">Cài đặt & PWA</span>
+          </span>
+        </a>
       </nav>
 
       <div class="rail-footer">
@@ -89,7 +127,9 @@
     <div class="main-stage">
       <header class="topbar">
         <div class="topbar-left">
-          <button id="sidebar-toggle" class="btn btn-secondary btn-xs" aria-label="Menu">☰</button>
+          <button id="sidebar-toggle" class="btn btn-secondary btn-xs" aria-label="Menu">
+            <svg class="ico" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
           <div class="greeting-box">
             <h3><span id="user-display-name">Khách</span></h3>
             <p id="topbar-subtitle">Google Forms · Microsoft Forms · AI · SPSS</p>
@@ -119,6 +159,7 @@
                 <div class="input-row">
                   <input type="text" id="form-url" placeholder="https://docs.google.com/forms/... | https://forms.office.com/r/... | CONFIG_2_..." />
                   <button id="btn-parse" class="btn btn-primary">
+                    <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <span id="btn-parse-text">Phân tích</span>
                     <span id="btn-parse-spinner" class="hidden">Đang đọc...</span>
                   </button>
@@ -184,7 +225,7 @@
                     <div class="card-header">
                       <h3><span class="step-badge">2</span> Tỷ lệ & Câu trả lời</h3>
                       <div class="toolbar-actions">
-                        <select id="distribution-mode-select" style="width: auto; padding: 5px 9px; font-size: 12px;">
+                        <select id="distribution-mode-select" style="width: auto; padding: 5px 28px 5px 10px; font-size: 12px;">
                           <option value="absolute">Chia Tuyệt Đối 100%</option>
                           <option value="natural_positive">Tự nhiên (Tích cực)</option>
                           <option value="natural_neutral">Tự nhiên (Trung lập)</option>
@@ -199,6 +240,7 @@
                         <div class="input-row">
                           <textarea id="ai-prompt-input" rows="2" placeholder="Mô tả cho AI (VD: Sinh viên năm 2-4, 80% hài lòng) hoặc để trống..."></textarea>
                           <button id="btn-ai-distribute" class="btn btn-ai" type="button">
+                            <svg class="ico" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6z"/></svg>
                             <span id="btn-ai-text">AI Điền %</span>
                             <span id="btn-ai-spinner" class="hidden">Đang xử lý...</span>
                           </button>
@@ -414,7 +456,10 @@
                     <div class="progress-bar-bg"><div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div></div>
 
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                      <button id="btn-start" class="btn btn-primary" style="flex: 1;">Bắt đầu</button>
+                      <button id="btn-start" class="btn btn-primary" style="flex: 1;">
+                        <svg class="ico" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Bắt đầu
+                      </button>
                       <button id="btn-skip-wait" class="btn btn-cyan hidden">Chạy ngay</button>
                       <button id="btn-stop" class="btn btn-danger hidden" style="flex: 1;">Dừng</button>
                     </div>
@@ -504,7 +549,10 @@
                 </div>
               </div>
 
-              <button id="fd-generate-btn" class="btn btn-ai">Thiết kế bằng AI</button>
+              <button id="fd-generate-btn" class="btn btn-ai">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6z"/></svg>
+                Thiết kế bằng AI
+              </button>
             </div>
           </div>
 
@@ -516,7 +564,7 @@
                 <button class="subtab-btn fd-view-btn" data-view="preview">Xem trước</button>
               </div>
               <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                <select id="fd-code-style" style="width: auto; padding: 5px 8px; font-size: 12px;">
+                <select id="fd-code-style" style="width: auto; padding: 5px 28px 5px 8px; font-size: 12px;">
                   <option value="">Ẩn mã</option>
                   <option value="bracket">[TL1]</option>
                   <option value="dot">TL1.</option>
@@ -537,7 +585,10 @@
               <p>Mô phỏng & kiểm định thử bảng hỏi (không thay thế dữ liệu khảo sát thật).</p>
             </div>
             <div class="toolbar-actions">
-              <button id="res-ai-suggest-btn" class="btn btn-ai btn-xs">AI Gợi ý từ Form</button>
+              <button id="res-ai-suggest-btn" class="btn btn-ai btn-xs">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6z"/></svg>
+                AI Gợi ý từ Form
+              </button>
               <button id="res-demo-model-btn" class="btn btn-secondary btn-xs">Mẫu</button>
             </div>
           </div>
@@ -576,15 +627,18 @@
 
                 <div style="border-top: 1px solid var(--border); padding-top: 12px;">
                   <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 6px;">Import CSV có sẵn (tùy chọn):</label>
-                  <div class="input-row" style="margin-bottom: 10px;">
-                    <input type="file" id="res-csv-file" accept=".csv" />
+                  <input type="file" id="res-csv-file" accept=".csv" style="margin-bottom: 8px;" />
+                  <div class="input-row" style="margin-bottom: 12px;">
                     <input type="text" id="res-csv-exclude" placeholder="Loại dòng: 12, 18-25" />
                     <button id="res-import-csv-btn" class="btn btn-secondary btn-sm">Import CSV</button>
                   </div>
                 </div>
 
                 <div class="toolbar-actions">
-                  <button id="res-run-btn" class="btn btn-primary">Sinh dữ liệu & Kiểm định</button>
+                  <button id="res-run-btn" class="btn btn-primary">
+                    <svg class="ico" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Sinh dữ liệu & Kiểm định
+                  </button>
                   <button id="res-push-form-btn" class="btn btn-cyan hidden">Đẩy sang Form</button>
                 </div>
               </div>
@@ -791,9 +845,9 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=3.2"></script>
-  <script src="/static/js/designer.js?v=3.2"></script>
-  <script src="/static/js/research.js?v=3.2"></script>
-  <script src="/static/js/tools.js?v=3.2"></script>
+  <script src="/static/js/app.js?v=4.0"></script>
+  <script src="/static/js/designer.js?v=4.0"></script>
+  <script src="/static/js/research.js?v=4.0"></script>
+  <script src="/static/js/tools.js?v=4.0"></script>
 </body>
 </html>
