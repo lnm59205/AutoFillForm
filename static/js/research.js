@@ -33,10 +33,10 @@
 
       cList.innerHTML = modelSpec.constructs.map((c, ci) => `
         <div class="question-item" style="padding:12px;">
-          <div class="input-row" style="margin-bottom:8px;">
-            <input type="text" class="rc-code" data-ci="${ci}" value="${esc(c.code)}" placeholder="Mã" style="max-width:78px;" />
+          <div class="compact-row">
+            <input type="text" class="rc-code" data-ci="${ci}" value="${esc(c.code)}" placeholder="Mã" style="max-width:72px;" />
             <input type="text" class="rc-name" data-ci="${ci}" value="${esc(c.name)}" placeholder="Tên biến" />
-            <select class="rc-role" data-ci="${ci}" style="max-width:110px;">
+            <select class="rc-role" data-ci="${ci}" style="max-width:112px;">
               <option value="IV" ${c.role === 'IV' ? 'selected' : ''}>Độc lập (IV)</option>
               <option value="MED" ${c.role === 'MED' ? 'selected' : ''}>Trung gian</option>
               <option value="MOD" ${c.role === 'MOD' ? 'selected' : ''}>Điều tiết</option>
@@ -62,12 +62,12 @@
       const pList = document.getElementById('res-paths-list');
       const codeOpts = modelSpec.constructs.map((c) => `<option value="${esc(c.code)}">${esc(c.code)}</option>`).join('');
       pList.innerHTML = modelSpec.paths.map((p, pi) => `
-        <div class="input-row" style="margin-bottom:6px; align-items:center;">
-          <input type="text" class="rp-lbl" data-pi="${pi}" value="${esc(p.label)}" style="max-width:60px; padding:6px;" />
+        <div class="compact-row">
+          <input type="text" class="rp-lbl" data-pi="${pi}" value="${esc(p.label)}" style="max-width:54px; padding:6px;" />
           <select class="rp-from" data-pi="${pi}">${codeOpts}</select>
-          <span>→</span>
+          <span style="font-size:12px;">→</span>
           <select class="rp-to" data-pi="${pi}">${codeOpts}</select>
-          <input type="number" class="rp-beta" data-pi="${pi}" value="${p.beta}" step="0.05" min="-0.85" max="0.85" style="max-width:85px; padding:6px;" title="Hệ số β" />
+          <input type="number" class="rp-beta" data-pi="${pi}" value="${p.beta}" step="0.05" min="-0.85" max="0.85" style="max-width:72px; padding:6px;" title="Hệ số β" />
           <button class="btn btn-danger btn-xs rp-del" data-pi="${pi}">×</button>
         </div>
       `).join('');

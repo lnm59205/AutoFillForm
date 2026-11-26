@@ -168,6 +168,7 @@
     document.querySelectorAll('.menu-item').forEach((i) => i.classList.toggle('active', i.dataset.panel === panelId));
     document.querySelectorAll('.content-panel').forEach((p) => p.classList.toggle('active', p.id === panelId));
     document.getElementById('studio-rail')?.classList.remove('open');
+    document.getElementById('rail-backdrop')?.classList.add('hidden');
     if (panelId === 'panel-campaign') toggleCampaignWorkspaceViews();
     if (panelId === 'panel-history') renderSavedFormsList();
   }
@@ -262,7 +263,14 @@
       });
     });
     document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-      document.getElementById('studio-rail')?.classList.toggle('open');
+      const rail = document.getElementById('studio-rail');
+      const bd = document.getElementById('rail-backdrop');
+      const open = rail?.classList.toggle('open');
+      if (bd) bd.classList.toggle('hidden', !open);
+    });
+    document.getElementById('rail-backdrop')?.addEventListener('click', () => {
+      document.getElementById('studio-rail')?.classList.remove('open');
+      document.getElementById('rail-backdrop')?.classList.add('hidden');
     });
     document.getElementById('btn-nav-to-home')?.addEventListener('click', () => openPanel('panel-home'));
 
@@ -457,25 +465,25 @@
               <div class="strategy-select-container" data-q-name="${esc(elem.name)}" data-q-desc="${esc(elem.description)}">
                 <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">Nguồn dữ liệu câu trả lời:</label>
                 <select class="strategy-select" onchange="window.handleStrategyChange(this)">
-                  <option value="custom_list" ${defStrat === 'custom_list' ? 'selected' : ''}>Tạo bằng AI theo ngữ cảnh / Tự dán danh sách (Mỗi dòng 1 lượt)</option>
-                  <option value="email" ${defStrat === 'email' ? 'selected' : ''}>Email ngẫu nhiên chuẩn người thật (@gmail.com, không trùng)</option>
-                  <option value="vi_name">Họ và tên tiếng Việt ngẫu nhiên (Có dấu, không trùng)</option>
-                  <option value="vi_phone">Số điện thoại Việt Nam (10 số 09x/03x, không trùng)</option>
-                  <option value="mssv">Mã số sinh viên (MSSV ngẫu nhiên)</option>
-                  <option value="class_code">Mã lớp / Ngành (VD: K19 QTKD 2)</option>
-                  <option value="vi_address">Địa chỉ tại Việt Nam ngẫu nhiên</option>
-                  <option value="static">Giá trị cố định (Điền giống nhau mọi lượt)</option>
+                  <option value="custom_list" ${defStrat === 'custom_list' ? 'selected' : ''}>AI / Danh sách (1 dòng/lượt)</option>
+                  <option value="email" ${defStrat === 'email' ? 'selected' : ''}>Email ngẫu nhiên (@gmail.com)</option>
+                  <option value="vi_name">Họ tên Việt Nam</option>
+                  <option value="vi_phone">SĐT Việt Nam (10 số)</option>
+                  <option value="mssv">MSSV ngẫu nhiên</option>
+                  <option value="class_code">Mã lớp (VD: K19 QTKD 2)</option>
+                  <option value="vi_address">Địa chỉ Việt Nam</option>
+                  <option value="static">Giá trị cố định</option>
                 </select>
-                <div class="static-input-wrapper ${defStrat === 'custom_list' ? '' : 'hidden'}" style="margin-top:10px;">
-                  <div class="input-row question-ai-prompt-bar" style="margin-bottom:8px;">
-                    <input type="text" class="question-ai-prompt-input" placeholder="Yêu cầu riêng cho AI (hoặc để trống rồi bấm Tạo AI)..." />
-                    <button type="button" class="btn btn-ai btn-sm" onclick="window.generateQuestionTextByAI(this)">Tạo bằng AI</button>
+                <div class="static-input-wrapper ${defStrat === 'custom_list' ? '' : 'hidden'}" style="margin-top:8px;">
+                  <div class="input-row question-ai-prompt-bar" style="margin-bottom:6px;">
+                    <input type="text" class="question-ai-prompt-input" placeholder="Gợi ý cho AI (hoặc để trống)..." />
+                    <button type="button" class="btn btn-ai btn-xs" onclick="window.generateQuestionTextByAI(this)">Tạo AI</button>
                   </div>
-                  <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-hint); margin-bottom:4px;">
-                    <span class="custom-list-helper">Danh sách dữ liệu (Mỗi dòng = 1 lượt chạy):</span>
-                    <span class="custom-list-counter">Số dòng: 0</span>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-hint); margin-bottom:4px;">
+                    <span class="custom-list-helper">Danh sách (mỗi dòng 1 lượt):</span>
+                    <span class="custom-list-counter">0 dòng</span>
                   </div>
-                  <textarea class="static-value-input" rows="4" oninput="window.updateCustomListCount(this)" placeholder="Dán danh sách câu trả lời hoặc bấm Tạo bằng AI..."></textarea>
+                  <textarea class="static-value-input" rows="3" oninput="window.updateCustomListCount(this)" placeholder="Dán danh sách hoặc bấm Tạo AI..."></textarea>
                 </div>
               </div>
             `;

@@ -138,7 +138,8 @@
       `;
 
       (s.sections || []).forEach((sec, si) => {
-        html += `<div class="card"><div class="card-header"><h3>Phần ${si + 1}: <input type="text" data-s="${si}" data-f="sec-title" value="${esc(sec.title)}" style="width:320px; display:inline-block;" /></h3>
+        html += `<div class="card"><div class="card-header"><h3>Phần ${si + 1}</h3>
+          <input type="text" class="fd-sec-title-input" data-s="${si}" data-f="sec-title" value="${esc(sec.title)}" />
           ${si > 0 ? `<button class="btn btn-danger btn-xs" data-act="del-sec" data-s="${si}">Xóa phần</button>` : ''}
         </div><div class="card-body">`;
 

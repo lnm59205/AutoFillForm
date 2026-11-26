@@ -8,14 +8,14 @@
 
   const I18N = {
     vi: {
-      nav_fill: 'ĐIỀN FORM TỰ ĐỘNG', m_home: 'Nhập Form & Config', m_campaign: 'Cấu hình & Chạy',
-      nav_tools: 'CÔNG CỤ AI & NGHIÊN CỨU', m_designer: 'Thiết kế Form bằng AI', m_research: 'Nghiên cứu SPSS / PLS', m_timestamp: 'Sửa Dấu Thời Gian',
-      nav_system: 'HỆ THỐNG', m_history: 'Lịch sử đã lưu', m_settings: 'Cài đặt, AI Key & PWA', logout: 'Đăng xuất',
+      nav_fill: 'ĐIỀN FORM', m_home: 'Nhập Form', m_campaign: 'Chiến dịch',
+      nav_tools: 'CÔNG CỤ', m_designer: 'Thiết kế Form AI', m_research: 'SPSS / SmartPLS', m_timestamp: 'Sửa Giờ Sheet',
+      nav_system: 'HỆ THỐNG', m_history: 'Đã lưu', m_settings: 'Cài đặt & PWA', logout: 'Đăng xuất',
     },
     en: {
-      nav_fill: 'AUTO FORM FILLER', m_home: 'Import Form & Config', m_campaign: 'Configure & Run',
-      nav_tools: 'AI & RESEARCH TOOLS', m_designer: 'AI Form Designer', m_research: 'SPSS / PLS Research', m_timestamp: 'Edit Sheet Timestamps',
-      nav_system: 'SYSTEM', m_history: 'Saved History', m_settings: 'Settings, AI Key & PWA', logout: 'Sign Out',
+      nav_fill: 'FILL FORM', m_home: 'Import Form', m_campaign: 'Campaign',
+      nav_tools: 'TOOLS', m_designer: 'AI Designer', m_research: 'SPSS / SmartPLS', m_timestamp: 'Timestamps',
+      nav_system: 'SYSTEM', m_history: 'Saved', m_settings: 'Settings & PWA', logout: 'Sign Out',
     },
   };
 
@@ -32,7 +32,7 @@
   function applyTheme(theme) {
     document.body.classList.toggle('theme-light', theme === 'light');
     const tb = document.getElementById('btn-theme-toggle');
-    if (tb) tb.textContent = theme === 'light' ? 'Giao diện: Sáng' : 'Giao diện: Tối';
+    if (tb) tb.textContent = theme === 'light' ? 'Sáng' : 'Tối';
   }
 
   document.addEventListener('DOMContentLoaded', () => {
