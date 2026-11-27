@@ -1,0 +1,18 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "autofillform-studio"
+main = "src/index.ts"
+compatibility_date = "2025-02-14"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# Cron Trigger chạy mỗi phút 24/7 trên gói Cloudflare Free (0đ) để xử lý lịch điền rải giờ
+[triggers]
+crons = ["* * * * *"]
+
+# Các biến public (không chứa secret) có thể đặt ở đây;
+# Biến nhạy cảm (SUPABASE_SERVICE_ROLE_KEY, GROQ_API_KEY) thêm qua Cloudflare Dashboard Secrets hoặc file .dev.vars
+[vars]
+APP_ENV = "production"
