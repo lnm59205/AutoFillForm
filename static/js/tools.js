@@ -88,6 +88,38 @@
       }
     });
 
+    // Modern File Dropzone enhancer (click + drag-and-drop + filename state)
+    document.querySelectorAll('.file-dropzone').forEach((zone) => {
+      const inp = zone.querySelector('input[type="file"]');
+      const nameEl = zone.querySelector('.file-drop-name');
+      if (!inp || !nameEl) return;
+      const defaultTxt = nameEl.textContent;
+
+      const refresh = () => {
+        const f = inp.files && inp.files[0];
+        if (f) {
+          const kb = Math.max(1, Math.round(f.size / 1024));
+          nameEl.textContent = `${f.name} (${kb} KB)`;
+          zone.classList.add('has-file');
+        } else {
+          nameEl.textContent = defaultTxt;
+          zone.classList.remove('has-file');
+        }
+      };
+
+      inp.addEventListener('change', refresh);
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('is-dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('is-dragover');
+        if (e.dataTransfer?.files?.length) {
+          inp.files = e.dataTransfer.files;
+          refresh();
+        }
+      });
+    });
+
     // Google Sheet Timestamp Editor
     async function loadTimestampSource(isFile) {
       let res;

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=4.0" />
+  <link rel="stylesheet" href="/static/css/style.css?v=4.1" />
 </head>
 <body>
   <!-- 1. AUTH -->
@@ -411,9 +411,17 @@
                     </div>
                     <div class="card-body">
                       <p class="hint-line">Hỗ trợ .xlsx / .csv tối đa 5.000 dòng. Cột thiếu tự lấy theo tỷ lệ ở tab Tỷ lệ %.</p>
-                      <div class="input-row" style="margin-bottom: 12px;">
-                        <input type="file" id="excel-file-input" accept=".xlsx,.xlsm,.csv" />
-                        <button id="btn-parse-excel" class="btn btn-primary">Kiểm tra file</button>
+                      <label class="file-dropzone" for="excel-file-input">
+                        <input type="file" id="excel-file-input" accept=".xlsx,.xlsm,.csv" class="file-input-hidden" />
+                        <span class="file-drop-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+                        <span class="file-drop-text">
+                          <strong class="file-drop-title">Tải lên file Excel hoặc CSV</strong>
+                          <span class="file-drop-name">Chưa chọn tệp (.xlsx, .csv)</span>
+                        </span>
+                        <span class="btn btn-secondary btn-xs file-drop-btn">Chọn tệp</span>
+                      </label>
+                      <div style="margin-bottom: 12px;">
+                        <button id="btn-parse-excel" class="btn btn-primary btn-block">Đọc & Kiểm tra file</button>
                       </div>
                       <div id="excel-result-box" class="hidden">
                         <div id="excel-stats-summary" class="kpi-grid"></div>
@@ -627,7 +635,15 @@
 
                 <div style="border-top: 1px solid var(--border); padding-top: 12px;">
                   <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 6px;">Import CSV có sẵn (tùy chọn):</label>
-                  <input type="file" id="res-csv-file" accept=".csv" style="margin-bottom: 8px;" />
+                  <label class="file-dropzone" for="res-csv-file">
+                    <input type="file" id="res-csv-file" accept=".csv" class="file-input-hidden" />
+                    <span class="file-drop-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+                    <span class="file-drop-text">
+                      <strong class="file-drop-title">Chọn hoặc kéo thả file CSV</strong>
+                      <span class="file-drop-name">Chưa chọn tệp (.csv)</span>
+                    </span>
+                    <span class="btn btn-secondary btn-xs file-drop-btn">Chọn tệp</span>
+                  </label>
                   <div class="input-row" style="margin-bottom: 12px;">
                     <input type="text" id="res-csv-exclude" placeholder="Loại dòng: 12, 18-25" />
                     <button id="res-import-csv-btn" class="btn btn-secondary btn-sm">Import CSV</button>
@@ -684,10 +700,16 @@
                 </div>
                 <div class="form-group">
                   <label>Hoặc tải lên file CSV / XLSX</label>
-                  <div class="input-row">
-                    <input type="file" id="ts-file-input" accept=".csv,.xlsx" />
-                    <button id="ts-load-file-btn" class="btn btn-secondary">Đọc file</button>
-                  </div>
+                  <label class="file-dropzone" for="ts-file-input">
+                    <input type="file" id="ts-file-input" accept=".csv,.xlsx" class="file-input-hidden" />
+                    <span class="file-drop-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+                    <span class="file-drop-text">
+                      <strong class="file-drop-title">Chọn hoặc kéo thả file phản hồi</strong>
+                      <span class="file-drop-name">Chưa chọn tệp (.csv, .xlsx)</span>
+                    </span>
+                    <span class="btn btn-secondary btn-xs file-drop-btn">Chọn tệp</span>
+                  </label>
+                  <button id="ts-load-file-btn" class="btn btn-secondary btn-block">Đọc file đã chọn</button>
                 </div>
                 <div id="ts-loaded-info" class="hidden info-banner"></div>
               </div>
@@ -845,9 +867,9 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=4.0"></script>
-  <script src="/static/js/designer.js?v=4.0"></script>
-  <script src="/static/js/research.js?v=4.0"></script>
-  <script src="/static/js/tools.js?v=4.0"></script>
+  <script src="/static/js/app.js?v=4.1"></script>
+  <script src="/static/js/designer.js?v=4.1"></script>
+  <script src="/static/js/research.js?v=4.1"></script>
+  <script src="/static/js/tools.js?v=4.1"></script>
 </body>
 </html>
