@@ -35,7 +35,124 @@
     if (tb) tb.textContent = theme === 'light' ? 'Sáng' : 'Tối';
   }
 
+  function showToast(msg, type) {
+    const stack = document.getElementById('toast-stack');
+    if (!stack) return;
+    const text = String(msg || '');
+    const resolved = type || (/lỗi|không thể|thiếu|vui lòng|vượt quá|không hợp lệ|tồn tại|chưa /i.test(text) ? 'error' : (/thành công|đã lưu|đã sao chép|sẵn sàng|khớp/i.test(text) ? 'success' : 'info'));
+    const el = document.createElement('div');
+    el.className = `toast-item toast-${resolved}`;
+    el.innerHTML = `<span class="toast-dot"></span><div style="flex:1; white-space:pre-line;">${window.AFF ? window.AFF.esc(text) : text}</div><button class="toast-close" aria-label="Đóng">&times;</button>`;
+    el.querySelector('.toast-close').onclick = () => el.remove();
+    stack.appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+
+  window.AFF_UI = { toast: showToast };
+  window.alert = (msg) => showToast(msg);
+
+  // Universal custom modern select enhancer (keeps native <select> synced for all JS callers)
+  function initCustomSelects() {
+    let activeMenu = null;
+    let activeWrap = null;
+    const protoDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+
+    function closeMenu() {
+      if (activeMenu) { activeMenu.remove(); activeMenu = null; }
+      if (activeWrap) { activeWrap.classList.remove('is-open'); activeWrap = null; }
+    }
+
+    function syncLabel(sel, lbl) {
+      const opt = sel.options[sel.selectedIndex];
+      lbl.textContent = opt ? opt.textContent : '';
+    }
+
+    function enhanceSelect(sel) {
+      if (!sel || sel.dataset.affEnhanced || sel.multiple) return;
+      sel.dataset.affEnhanced = '1';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'aff-select-wrap';
+      if (sel.id === 'fd-code-style' || sel.id === 'distribution-mode-select') wrap.classList.add('is-compact');
+      if (sel.style.maxWidth) wrap.style.maxWidth = sel.style.maxWidth;
+      if (sel.style.width === 'auto') wrap.style.width = 'auto';
+      if (sel.style.flex) wrap.style.flex = sel.style.flex;
+
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'aff-select-trigger';
+      trigger.innerHTML = `<span class="aff-select-label"></span><svg class="aff-select-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`;
+      const lbl = trigger.querySelector('.aff-select-label');
+
+      sel.parentNode.insertBefore(wrap, sel);
+      wrap.appendChild(sel);
+      wrap.appendChild(trigger);
+      sel.classList.add('aff-select-native');
+      syncLabel(sel, lbl);
+
+      // Sync when JS assigns sel.value directly
+      if (protoDesc && protoDesc.set) {
+        Object.defineProperty(sel, 'value', {
+          configurable: true,
+          get() { return protoDesc.get.call(this); },
+          set(v) { protoDesc.set.call(this, v); syncLabel(sel, lbl); },
+        });
+      }
+      sel.addEventListener('change', () => syncLabel(sel, lbl));
+      new MutationObserver(() => syncLabel(sel, lbl)).observe(sel, { childList: true, subtree: true });
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activeWrap === wrap) return closeMenu();
+        closeMenu();
+
+        const rect = trigger.getBoundingClientRect();
+        const menu = document.createElement('div');
+        menu.className = 'aff-select-menu';
+        menu.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - Math.max(rect.width, 180) - 8))}px`;
+        menu.style.width = `${Math.max(rect.width, 160)}px`;
+
+        Array.from(sel.options).forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'aff-select-opt' + (idx === sel.selectedIndex ? ' is-selected' : '');
+          btn.innerHTML = `<span>${window.AFF ? window.AFF.esc(opt.textContent) : opt.textContent}</span>${idx === sel.selectedIndex ? '<span>✓</span>' : ''}`;
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            sel.selectedIndex = idx;
+            syncLabel(sel, lbl);
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            closeMenu();
+          });
+          menu.appendChild(btn);
+        });
+
+        document.body.appendChild(menu);
+        const mh = menu.getBoundingClientRect().height;
+        const topPos = (rect.bottom + 6 + mh > window.innerHeight - 10) ? Math.max(8, rect.top - mh - 6) : rect.bottom + 6;
+        menu.style.top = `${topPos}px`;
+        wrap.classList.add('is-open');
+        activeMenu = menu;
+        activeWrap = wrap;
+      });
+    }
+
+    document.querySelectorAll('select').forEach(enhanceSelect);
+    new MutationObserver((muts) => {
+      muts.forEach((m) => m.addedNodes.forEach((n) => {
+        if (n.nodeType !== 1) return;
+        if (n.tagName === 'SELECT') enhanceSelect(n);
+        else n.querySelectorAll?.('select').forEach(enhanceSelect);
+      }));
+    }).observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+    window.addEventListener('resize', closeMenu);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
+    initCustomSelects();
     // Theme & Language
     const savedTheme = localStorage.getItem('aff_theme') || 'dark';
     applyTheme(savedTheme);

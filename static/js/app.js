@@ -1396,6 +1396,7 @@
       const btnStop = document.getElementById('btn-stop');
       btnStart.classList.add('hidden');
       btnStop.classList.remove('hidden');
+      document.getElementById('runner-live-dot')?.classList.remove('hidden');
 
       try {
         const res = await fetch('/api/start', {
@@ -1493,6 +1494,7 @@
       stopBtn.classList.add('hidden');
       stopBtn.disabled = false;
       document.getElementById('btn-skip-wait').classList.add('hidden');
+      document.getElementById('runner-live-dot')?.classList.add('hidden');
     }
 
     document.getElementById('btn-clear-logs')?.addEventListener('click', () => {

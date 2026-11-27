@@ -34,9 +34,9 @@
       cList.innerHTML = modelSpec.constructs.map((c, ci) => `
         <div class="question-item" style="padding:12px;">
           <div class="compact-row">
-            <input type="text" class="rc-code" data-ci="${ci}" value="${esc(c.code)}" placeholder="Mã" style="max-width:68px;" />
-            <input type="text" class="rc-name" data-ci="${ci}" value="${esc(c.name)}" placeholder="Tên biến" style="flex:1 1 130px;" />
-            <select class="rc-role" data-ci="${ci}" style="max-width:132px; flex:0 0 auto;">
+            <input type="text" class="rc-code" data-ci="${ci}" value="${esc(c.code)}" placeholder="Mã" style="max-width:60px; flex:0 0 60px;" />
+            <input type="text" class="rc-name" data-ci="${ci}" value="${esc(c.name)}" placeholder="Tên biến" style="flex:1 1 165px;" />
+            <select class="rc-role" data-ci="${ci}" style="max-width:126px; flex:0 0 auto;">
               <option value="IV" ${c.role === 'IV' ? 'selected' : ''}>Độc lập (IV)</option>
               <option value="MED" ${c.role === 'MED' ? 'selected' : ''}>Trung gian</option>
               <option value="MOD" ${c.role === 'MOD' ? 'selected' : ''}>Điều tiết</option>
@@ -47,8 +47,8 @@
           <div style="font-size:12px;">
             ${(c.items || []).map((it, ii) => `
               <div class="compact-row" style="margin-bottom:5px;">
-                <input type="text" class="ri-code" data-ci="${ci}" data-ii="${ii}" value="${esc(it.code)}" style="max-width:68px; padding:5px 7px; font-size:12px;" />
-                <input type="text" class="ri-label" data-ci="${ci}" data-ii="${ii}" value="${esc(it.label)}" style="padding:5px 7px; font-size:12px;" />
+                <input type="text" class="ri-code" data-ci="${ci}" data-ii="${ii}" value="${esc(it.code)}" style="max-width:62px; flex:0 0 62px; padding:5px 7px; font-size:12px;" />
+                <input type="text" class="ri-label" data-ci="${ci}" data-ii="${ii}" value="${esc(it.label)}" style="flex:1 1 160px; padding:5px 7px; font-size:12px;" />
                 <label style="font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; color:var(--text-muted);"><input type="checkbox" class="ri-rev" data-ci="${ci}" data-ii="${ii}" ${it.reverse ? 'checked' : ''} /> Đảo</label>
                 <label style="font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; color:var(--text-muted);"><input type="checkbox" class="ri-drop" data-ci="${ci}" data-ii="${ii}" ${it.dropped ? 'checked' : ''} /> Loại L2</label>
                 <button class="btn btn-danger btn-xs ri-del" data-ci="${ci}" data-ii="${ii}">×</button>
@@ -63,11 +63,11 @@
       const codeOpts = modelSpec.constructs.map((c) => `<option value="${esc(c.code)}">${esc(c.code)}</option>`).join('');
       pList.innerHTML = modelSpec.paths.map((p, pi) => `
         <div class="compact-row">
-          <input type="text" class="rp-lbl" data-pi="${pi}" value="${esc(p.label)}" style="max-width:54px; padding:6px;" />
-          <select class="rp-from" data-pi="${pi}">${codeOpts}</select>
-          <span style="font-size:12px;">→</span>
-          <select class="rp-to" data-pi="${pi}">${codeOpts}</select>
-          <input type="number" class="rp-beta" data-pi="${pi}" value="${p.beta}" step="0.05" min="-0.85" max="0.85" style="max-width:72px; padding:6px;" title="Hệ số β" />
+          <input type="text" class="rp-lbl" data-pi="${pi}" value="${esc(p.label)}" style="max-width:52px; flex:0 0 52px; padding:6px;" />
+          <select class="rp-from" data-pi="${pi}" style="max-width:82px;">${codeOpts}</select>
+          <span style="font-size:12px; color:var(--text-muted);">→</span>
+          <select class="rp-to" data-pi="${pi}" style="max-width:82px;">${codeOpts}</select>
+          <input type="number" class="rp-beta" data-pi="${pi}" value="${p.beta}" step="0.05" min="-0.85" max="0.85" style="max-width:64px; flex:0 0 64px; padding:6px;" title="Hệ số β" />
           <button class="btn btn-danger btn-xs rp-del" data-pi="${pi}">×</button>
         </div>
       `).join('');
@@ -196,7 +196,7 @@
           <tbody>
             ${(a.pls_constructs || []).map((pc) => `
               <tr>
-                <td><strong>${esc(pc.code)}</strong> — ${esc(pc.name)}</td><td>${esc(pc.role)}</td>
+                <td><strong>${esc(pc.code)}</strong> — ${esc(pc.name)}</td><td><span class="role-pill ${esc(String(pc.role || 'iv').toLowerCase())}">${esc(pc.role)}</span></td>
                 <td>${a.cronbach_r1[pc.code]?.alpha ?? pc.alpha}</td><td>${a.cronbach_r2[pc.code]?.alpha ?? pc.alpha}</td>
                 <td>${pc.rho_a}</td><td>${pc.cr}</td><td>${pc.ave}</td>
               </tr>
@@ -212,7 +212,7 @@
               <tr>
                 <td><strong>${esc(p.label)}</strong></td><td>${esc(p.from)} → ${esc(p.to)}</td>
                 <td>${p.beta}</td><td>${p.t_value}</td><td>${p.p_value}</td><td>${p.vif}</td><td>${p.f2}</td>
-                <td style="color:${p.supported ? 'var(--accent)' : 'var(--amber)'}; font-weight:700;">${p.supported ? 'Chấp nhận' : 'Bác bỏ'}</td>
+                <td><span class="sum-status-badge ${p.supported ? 'valid' : 'invalid'}">${p.supported ? 'Chấp nhận' : 'Bác bỏ'}</span></td>
               </tr>
             `).join('')}
           </tbody>

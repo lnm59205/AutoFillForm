@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css?v=4.1" />
+  <link rel="stylesheet" href="/static/css/style.css?v=5.1" />
 </head>
 <body>
   <!-- 1. AUTH -->
@@ -442,7 +442,7 @@
               <!-- RIGHT COLUMN: RUNNER -->
               <div class="campaign-right-col">
                 <div class="card">
-                  <div class="card-header"><h3><span class="step-badge">3</span> Chạy chiến dịch</h3></div>
+                  <div class="card-header"><h3><span class="step-badge">3</span> Chạy chiến dịch <span id="runner-live-dot" class="live-dot hidden"></span></h3></div>
                   <div class="card-body">
                     <div class="grid-2" style="gap: 10px;">
                       <div class="form-group">
@@ -731,7 +731,7 @@
                     <input type="text" id="ts-range-spec" placeholder="1-50, 62" />
                   </div>
                 </div>
-                <div class="grid-3">
+                <div class="grid-3 grid-3-ts">
                   <div class="form-group">
                     <label>Cách tính</label>
                     <select id="ts-sched-mode">
@@ -867,9 +867,11 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=4.1"></script>
-  <script src="/static/js/designer.js?v=4.1"></script>
-  <script src="/static/js/research.js?v=4.1"></script>
-  <script src="/static/js/tools.js?v=4.1"></script>
+  <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+
+  <script src="/static/js/app.js?v=5.1"></script>
+  <script src="/static/js/designer.js?v=5.1"></script>
+  <script src="/static/js/research.js?v=5.1"></script>
+  <script src="/static/js/tools.js?v=5.1"></script>
 </body>
 </html>
